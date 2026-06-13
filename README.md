@@ -1,19 +1,19 @@
-# ThinkBrowse — AI Frontend Testing for Claude Code & Cursor
+# ThinkRun — Screen Recorder for AI Coding Agents
 
-Stop the manual screenshot loop. ThinkBrowse gives your AI coding agent direct access to your real Chrome browser — with your cookies, your sessions, your extensions. Navigate, click, screenshot, and QA without switching tabs.
+Stop screenshotting bugs and typing paragraphs to explain them. ThinkRun records any browser session — or lets your agent record what it built — and turns it into **structured context your AI coding agent can act on**: every click, the console, network requests, your voice narration, and screenshots, all time-synced. Not just a screenshot. Not just a video.
 
 Works with **Claude Code**, **Cursor**, **Cline**, **Windsurf**, and any MCP client.
 
 ## Install
 
 ```bash
-npx @thinkbrowse/mcp
+npx @thinkrun/mcp
 ```
 
 Or install the CLI globally:
 
 ```bash
-npm install -g @thinkbrowse/cli
+npm install -g @thinkrun/cli
 ```
 
 The CLI automatically installs the native host binary, which lets AI tools control Chrome.
@@ -23,9 +23,9 @@ The CLI automatically installs the native host binary, which lets AI tools contr
 ```json
 {
   "mcpServers": {
-    "thinkbrowse": {
+    "thinkrun": {
       "command": "npx",
-      "args": ["@thinkbrowse/mcp"]
+      "args": ["@thinkrun/mcp"]
     }
   }
 }
@@ -36,17 +36,19 @@ Config location:
 - **Cursor**: `.cursor/mcp.json`
 - **Cline**: VS Code settings → Cline MCP Servers
 
-Then ask your agent: *"navigate to localhost:3000 and screenshot the checkout page"*
+Then ask your agent: *"navigate to localhost:3000 and screenshot the checkout page"* — or record the bug yourself and hand the agent the result.
 
-## Why ThinkBrowse
+## Why ThinkRun
 
-| | ThinkBrowse | Playwright MCP |
+Other tools give your agent eyes. ThinkRun gives it **structured sight** — context it can parse in one pass instead of you re-explaining the page.
+
+| | ThinkRun | Playwright MCP |
 |---|---|---|
-| Uses your real Chrome | ✅ | ❌ headless only |
-| Keeps your cookies & sessions | ✅ | ❌ fresh browser every time |
-| No "browser already in use" error | ✅ | ❌ common conflict |
-| Works with auth-gated pages | ✅ | ❌ no cookies |
-| Runs alongside your browser | ✅ | ❌ fights for Chrome profile |
+| Records a session into structured, replayable context | ✅ | ❌ drive-only |
+| Turns a recording into an AI-ready report (clicks, console, network) | ✅ | ❌ |
+| Shareable link, also as LLM-ready Markdown / JSON | ✅ | ❌ |
+| Uses your real Chrome — your cookies & sessions | ✅ | ❌ headless only |
+| Runs alongside your browser, no profile conflict | ✅ | ❌ fights for Chrome profile |
 
 ## Agent skills
 
@@ -54,13 +56,15 @@ Skills for Claude Code, Cursor, Codex, and Gemini CLI are in `.claude/skills/`, 
 
 ## Manual binary install
 
-If you need to install the native host without the CLI, download the binary for your platform from the [latest release](https://github.com/dundas/thinkbrowse/releases/latest) and run:
+If you need to install the native host without the CLI, download the binary for your platform from the [latest release](https://github.com/dundas/thinkrun/releases/latest) and run:
 
 ```bash
 chmod +x thinkbrowse-host-* && ./thinkbrowse-host-* --install
 ```
 
+> The native host binary keeps the `thinkbrowse-host` filename for now — it's the same signed binary, unchanged by the rename.
+
 ## More
 
-- [thinkbrowse.io](https://thinkbrowse.io)
-- [Privacy Policy](https://thinkbrowse.io/privacy)
+- [thinkrun.ai](https://thinkrun.ai)
+- [Privacy Policy](https://thinkrun.ai/privacy)
