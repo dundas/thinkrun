@@ -17,13 +17,13 @@ Portfolio GM (`decisive.gm`) via brain messaging.
 ## Mode Selection
 
 **Local mode** — use when the product requires auth/cookies (portfolio apps):
-- Controls your actual Chrome via the ThinkBrowse extension + bridge
+- Controls your actual Chrome via the ThinkRun extension + bridge
 - All commands operate on the tab you attach to
 - Best for: decisive-chat, derivative-admin, signal, teleportation, etc.
 
 **Cloud mode** — use for public-facing URLs, headless scraping, no auth needed:
 - Provisions an isolated Playwright browser on Fly.io
-- Uses `browse.sh` from the web-browse skill
+- Driven with `thinkrun cloud start` + `--mode cloud` (see the web-browse skill)
 - Best for: marketing pages, public APIs, pre-auth flows
 
 ---
@@ -45,15 +45,15 @@ JOURNEY="User login through Round Tables view"
 
 ```bash
 # List available Chrome tabs
-thinkbrowse tabs
+thinkrun tabs
 
 # Attach to an existing tab (use a clean one — New Tab, or any non-critical tab)
 # TAB_ID comes from the tabs output above
 TAB_ID=656847550
-thinkbrowse attach $TAB_ID
+thinkrun attach $TAB_ID
 
 # Navigate to the product
-thinkbrowse navigate "$PRODUCT_URL"
+thinkrun navigate "$PRODUCT_URL"
 sleep 2
 ```
 
@@ -62,10 +62,11 @@ The attached tab is now the active session. All subsequent commands route to it 
 ### Cloud Mode (no auth required)
 
 ```bash
-BROWSE=".claude/skills/web-browse/browse.sh"
-SID=$(bash $BROWSE session-create)
-echo "Cloud session: $SID"
-# All cloud commands take $SID as first arg: bash $BROWSE goto $SID "https://..."
+# Start an isolated cloud browser; it becomes the active session.
+thinkrun cloud start
+# Subsequent commands run against it. Force cloud per-command with --mode cloud.
+thinkrun navigate "$PRODUCT_URL" --mode cloud
+# When done: thinkrun cloud stop
 ```
 
 ---
@@ -75,27 +76,27 @@ echo "Cloud session: $SID"
 ```bash
 # Navigate and wait for page load
 nav() {
-  thinkbrowse navigate "$1"
+  thinkrun navigate "$1"
   sleep 2
 }
 
 # Screenshot — saves to /tmp, read the path with the Read tool
 shot() {
   local label="$1"
-  local result=$(thinkbrowse screenshot --output "/tmp/ux_${label}.png")
+  local result=$(thinkrun screenshot --output "/tmp/ux_${label}.png")
   echo "Screenshot: /tmp/ux_${label}.png"
   # Then use Read tool on that path to observe the image
 }
 
 # Click by CSS selector
 click_sel() {
-  thinkbrowse click "$1"
+  thinkrun click "$1"
   sleep 1
 }
 
 # Click by visible button/link text (safe evaluate — avoids ambiguous selectors)
 click_text() {
-  thinkbrowse evaluate "[...document.querySelectorAll('button,a,[role=button]')].find(el=>el.textContent.trim()==='$1')?.click()"
+  thinkrun evaluate "[...document.querySelectorAll('button,a,[role=button]')].find(el=>el.textContent.trim()==='$1')?.click()"
   sleep 1
 }
 
@@ -104,28 +105,28 @@ click_text() {
 type_react() {
   local selector="$1"
   local value="$2"
-  thinkbrowse click "$selector"
-  thinkbrowse type "$selector" "$value"
+  thinkrun click "$selector"
+  thinkrun type "$selector" "$value"
 }
 
 # Get current URL
 current_url() {
-  thinkbrowse url
+  thinkrun url
   # Returns: {"data": "http://..."} — data is a plain string
 }
 
 # Scroll the page
 scroll_down() {
-  thinkbrowse scroll --down "${1:-500}"
+  thinkrun scroll --down "${1:-500}"
 }
 
 scroll_up() {
-  thinkbrowse scroll --up "${1:-500}"
+  thinkrun scroll --up "${1:-500}"
 }
 
 # Extract visible text
 read_text() {
-  thinkbrowse evaluate "([...document.querySelectorAll('h1,h2,h3,p,label,span')].map(e=>e.textContent.trim()).filter(t=>t.length>4).join('\n')).slice(0,2000)"
+  thinkrun evaluate "([...document.querySelectorAll('h1,h2,h3,p,label,span')].map(e=>e.textContent.trim()).filter(t=>t.length>4).join('\n')).slice(0,2000)"
 }
 ```
 
@@ -136,7 +137,7 @@ read_text() {
 For each step:
 1. Perform the action (navigate, click, type, scroll)
 2. Wait for state to settle (`sleep 1` or `sleep 2`)
-3. Take a screenshot: `thinkbrowse screenshot --output "/tmp/ux_NN_label.png"`
+3. Take a screenshot: `thinkrun screenshot --output "/tmp/ux_NN_label.png"`
 4. Read the screenshot file with the **Read tool** to observe it
 5. Note: **what you see** vs **what you expected**
 
@@ -144,46 +145,46 @@ For each step:
 
 ```bash
 # 1. Landing / Homepage
-thinkbrowse navigate "$PRODUCT_URL"
+thinkrun navigate "$PRODUCT_URL"
 sleep 2
-thinkbrowse screenshot --output "/tmp/ux_01_homepage.png"
+thinkrun screenshot --output "/tmp/ux_01_homepage.png"
 # → Read tool: /tmp/ux_01_homepage.png
 # Observe: CTA clarity, value proposition, onboarding path
 
 # 2. Auth / Login (if required)
-thinkbrowse navigate "${PRODUCT_URL}/login"
+thinkrun navigate "${PRODUCT_URL}/login"
 sleep 1
-thinkbrowse screenshot --output "/tmp/ux_02_login.png"
+thinkrun screenshot --output "/tmp/ux_02_login.png"
 # → Read tool: /tmp/ux_02_login.png
 
 # Fill login form (use type for React-controlled inputs, fill for plain HTML)
-thinkbrowse click "input[type=email]"
-thinkbrowse type "input[type=email]" "test@example.com"
-thinkbrowse click "input[type=password]"
-thinkbrowse type "input[type=password]" "testpassword"
-thinkbrowse click "button[type=submit]"
+thinkrun click "input[type=email]"
+thinkrun type "input[type=email]" "test@example.com"
+thinkrun click "input[type=password]"
+thinkrun type "input[type=password]" "testpassword"
+thinkrun click "button[type=submit]"
 sleep 3
-thinkbrowse screenshot --output "/tmp/ux_03_post_login.png"
+thinkrun screenshot --output "/tmp/ux_03_post_login.png"
 # → Read tool: /tmp/ux_03_post_login.png
 # Check: Did login succeed? What URL are we on?
-thinkbrowse url
+thinkrun url
 
 # 3. Core Action
-thinkbrowse screenshot --output "/tmp/ux_04_core_action_start.png"
+thinkrun screenshot --output "/tmp/ux_04_core_action_start.png"
 # ... perform the action ...
 sleep 2
-thinkbrowse screenshot --output "/tmp/ux_05_core_action_result.png"
+thinkrun screenshot --output "/tmp/ux_05_core_action_result.png"
 
 # 4. Scroll to see full content
-thinkbrowse scroll --down 600
-thinkbrowse screenshot --output "/tmp/ux_06_scrolled.png"
+thinkrun scroll --down 600
+thinkrun screenshot --output "/tmp/ux_06_scrolled.png"
 
 # 5. Error Path (submit empty form, invalid input, etc.)
 # navigate back, try invalid actions...
-thinkbrowse screenshot --output "/tmp/ux_07_error_state.png"
+thinkrun screenshot --output "/tmp/ux_07_error_state.png"
 
 # 6. Accessibility snapshot (reveals element structure, roles, text)
-thinkbrowse snapshot
+thinkrun snapshot
 ```
 
 ---
@@ -211,7 +212,7 @@ Rate each: ✅ Good / 🟡 Needs work / 🔴 Broken
 ## Step 5 — CLI DX Checklist (if product has a CLI)
 
 ```bash
-PRODUCT_CLI="thinkbrowse"   # or "decisive", etc. — leave empty to skip
+PRODUCT_CLI="thinkrun"   # or "decisive", etc. — leave empty to skip
 
 if [ -n "$PRODUCT_CLI" ]; then
   $PRODUCT_CLI --help
@@ -315,12 +316,12 @@ EOF
 ## Known Gotchas
 
 - **`fill` doesn't trigger React `onChange`** — use `type` instead for React-controlled inputs; `fill` works for plain HTML inputs
-- **Screenshot returns a local file path** — `{"data": {"path": "/tmp/thinkbrowse-xxx.png"}}`. Use the Read tool on that path to view it. There is no `--label` flag.
-- **`thinkbrowse url` returns a plain string** — `{"data": "http://..."}` not `{"data": {"url": "..."}}`. Parse as `d['data']`.
-- **Scroll syntax** — `thinkbrowse scroll --down 500` (not `scroll down 500`)
+- **Screenshot returns a local file path** — `{"data": {"path": "/tmp/thinkrun-xxx.png"}}`. Use the Read tool on that path to view it. There is no `--label` flag.
+- **`thinkrun url` returns a plain string** — `{"data": "http://..."}` not `{"data": {"url": "..."}}`. Parse as `d['data']`.
+- **Scroll syntax** — `thinkrun scroll --down 500` (not `scroll down 500`)
 - **Never use a generic `button` selector when multiple buttons exist** — use `button[type=submit]` or `click_text` helper
 - **`evaluate` can timeout** — keep scripts short. Avoid `document.body.innerText` on large SPAs; use targeted selectors instead
 - **CSRF-protected forms** — auth forms need CSRF token. The React auth-client handles this automatically, but the CSRF fetch must complete before submit. Use `sleep 2` after navigation before filling.
-- **Tab becoming unresponsive** — if commands timeout, use `thinkbrowse tabs` to find a responsive tab, then `thinkbrowse attach <newTabId>` to switch
+- **Tab becoming unresponsive** — if commands timeout, use `thinkrun tabs` to find a responsive tab, then `thinkrun attach <newTabId>` to switch
 - **`switch-tab` ≠ `attach`** — `switch-tab` changes Chrome's active tab for visual focus; `attach` changes which tab receives CLI commands. You need both when switching tabs.
-- **Cloud mode screenshot download** — use `bash $BROWSE screenshot $SID > /tmp/sc.json` then extract base64 from the JSON response
+- **Cloud mode screenshot** — `thinkrun screenshot --output /tmp/sc.png --mode cloud` saves the file directly; read the path with the Read tool
