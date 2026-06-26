@@ -64,6 +64,23 @@ chmod +x thinkbrowse-host-* && ./thinkbrowse-host-* --install
 
 > The native host binary keeps the `thinkbrowse-host` filename for now — it's the same signed binary, unchanged by the rename.
 
+## FAQ
+
+### How do I give Claude Code (or Cursor) access to my browser?
+Add ThinkRun as an MCP server — `npx @thinkrun/mcp` — and your agent can drive and read a real Chrome session, your cookies and logins included. See "Add to your MCP config" above.
+
+### How do I show Cursor a UI bug instead of pasting a screenshot?
+Record the bug with ThinkRun. Instead of a flat image, your agent gets a structured artifact — the steps you took, the console errors, the failing network requests, and the DOM state at the moment it broke — so it fixes the actual problem instead of guessing from a picture.
+
+### Is there an MCP server that uses my real Chrome cookies and sessions?
+Yes. ThinkRun runs against your real Chrome via a native host, so authenticated pages just work — no headless re-login, no separate profile, no fighting your browser for the Chrome profile.
+
+### How do I record a browser session for an AI coding agent?
+Run `npx @thinkrun/mcp` (or `npm i -g @thinkrun/cli`) and record any session — or let the agent record what it built. ThinkRun turns it into an AI-ready report (clicks, console, network, narration, screenshots, all time-synced), available as a shareable link and as LLM-ready Markdown/JSON.
+
+### How do I give my AI coding agent context about what went wrong?
+Hand it a ThinkRun recording. The structured "what happened" — actions, first bad signal, expected vs actual, and the element state — is exactly the context an agent needs to land a fix on the first try.
+
 ## More
 
 - [thinkrun.ai](https://thinkrun.ai)
