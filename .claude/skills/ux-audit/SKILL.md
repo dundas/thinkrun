@@ -1,6 +1,6 @@
 ---
 name: ux-audit
-description: "Walk through a product as a user and audit the UI/UX for quality, flow, and experience. Use when: review UI or UX, test a user flow or onboarding, audit the design, check how a feature looks and behaves, walk through a journey, verify the user experience"
+description: "Walk through a product UI as a real user — take screenshots, find broken flows, and produce a structured report with every fix listed. Use when: audit the UI or UX, do a UX review, QA a feature, check if something looks right, verify a user flow or onboarding, walk through a journey, 'is X broken?', 'check how X works', 'verify the feature we shipped'. Do NOT use for: fixing a specific known bug, reading a component's code, deploying, writing tests, or answering questions about code structure."
 category: ux
 sync: all
 ---
@@ -8,33 +8,40 @@ sync: all
 # UX Audit Skill
 
 You are a world-class UX designer and QA engineer. Your job is to walk through a
-user journey on any portfolio product using a browser session, take screenshots
-at every meaningful step, produce a structured UX report, and send findings to the
-Portfolio GM (`decisive.gm`) via brain messaging.
+user journey on a product using a browser session, take screenshots at every
+meaningful step, and produce a structured UX report with a complete fix list.
 
 ---
 
 ## Mode Selection
 
-**Local mode** — use when the product requires auth/cookies (portfolio apps):
-- Controls your actual Chrome via the ThinkRun extension + bridge
+**Local mode** — use when the product requires auth/cookies (your real logged-in session):
+- Controls your actual Chrome via the ThinkRun extension + native host
 - All commands operate on the tab you attach to
-- Best for: decisive-chat, derivative-admin, signal, teleportation, etc.
+- Best for: apps behind login, staging environments with your cookies
 
 **Cloud mode** — use for public-facing URLs, headless scraping, no auth needed:
-- Provisions an isolated Playwright browser on Fly.io
+- Provisions an isolated cloud browser
 - Driven with `thinkrun cloud start` + `--mode cloud` (see the web-browse skill)
-- Best for: marketing pages, public APIs, pre-auth flows
+- Best for: marketing pages, public flows, pre-auth journeys
 
 ---
 
 ## Step 0 — Configure the Audit
 
 ```bash
-PRODUCT="Decisive"
-PRODUCT_URL="http://localhost:3000"   # or https://decisive-chat.pages.dev
+PRODUCT="<product name>"
+PRODUCT_URL="<http://localhost:PORT or https://your-app.example.com>"
 AUDIT_DATE=$(date +%Y-%m-%d)
-JOURNEY="User login through Round Tables view"
+JOURNEY="<one-line description of the journey to test>"
+```
+
+If testing against localhost, check what's actually on the port before assuming
+the right app is there — other services may be squatting the default port:
+
+```bash
+PORT=$(printf '%s\n' "$PRODUCT_URL" | sed -nE 's#.*:([0-9]+).*#\1#p')
+[ -n "$PORT" ] && lsof -iTCP:"$PORT" -sTCP:LISTEN 2>/dev/null | head -3
 ```
 
 ---
@@ -212,7 +219,7 @@ Rate each: ✅ Good / 🟡 Needs work / 🔴 Broken
 ## Step 5 — CLI DX Checklist (if product has a CLI)
 
 ```bash
-PRODUCT_CLI="thinkrun"   # or "decisive", etc. — leave empty to skip
+PRODUCT_CLI="<cli-binary>"   # leave empty to skip
 
 if [ -n "$PRODUCT_CLI" ]; then
   $PRODUCT_CLI --help
@@ -256,60 +263,9 @@ fi
 3. **Fix title** — rationale and expected impact
 ```
 
----
-
-## Step 7 — Send Findings to decisive.gm
-
-```bash
-bun .claude/skills/cross-brain-message/brain-msg.ts send \
-  --to decisive.gm \
-  --type notification \
-  --subject "UX Audit: $PRODUCT — $AUDIT_DATE" \
-  --body "$(python3 -c "
-import json
-print(json.dumps({
-  'product': '$PRODUCT',
-  'url': '$PRODUCT_URL',
-  'date': '$AUDIT_DATE',
-  'journey': '$JOURNEY',
-  'summary': {
-    'critical_issues': 0,
-    'moderate_issues': 0,
-    'passes': 0,
-    'overall': 'good'
-  },
-  'critical_issues': [],
-  'top_3_fixes': [],
-  'full_report': 'See memory/daily/$AUDIT_DATE.md'
-}))
-")"
-```
-
-For critical/strategic issues, escalate via work order:
-
-```bash
-bun .claude/skills/cross-brain-message/brain-msg.ts work-order \
-  --to decisive.gm \
-  --subject "CRITICAL UX issues in $PRODUCT — action needed" \
-  --body '{"message":"Critical UX issues found","action":"read memory/UX_AUDIT_PLAN.md","file":"memory/UX_AUDIT_PLAN.md","priority":"critical"}'
-```
-
----
-
-## Step 8 — Save to Daily Log
-
-```bash
-cat >> memory/daily/$AUDIT_DATE.md << 'EOF'
-
-## UX Audit — <PRODUCT>
-- Journey: <JOURNEY>
-- Critical issues: N
-- Moderate issues: N
-- Top fix: <FIX_1>
-- Sent to decisive.gm: yes
-- Screenshots: /tmp/ux_*.png
-EOF
-```
+Deliver the report wherever your team tracks findings — a Markdown file in the
+repo, an issue per critical finding, or your task tracker. Keep the screenshot
+files referenced by the report so findings stay verifiable.
 
 ---
 
@@ -321,7 +277,7 @@ EOF
 - **Scroll syntax** — `thinkrun scroll --down 500` (not `scroll down 500`)
 - **Never use a generic `button` selector when multiple buttons exist** — use `button[type=submit]` or `click_text` helper
 - **`evaluate` can timeout** — keep scripts short. Avoid `document.body.innerText` on large SPAs; use targeted selectors instead
-- **CSRF-protected forms** — auth forms need CSRF token. The React auth-client handles this automatically, but the CSRF fetch must complete before submit. Use `sleep 2` after navigation before filling.
+- **CSRF-protected forms** — auth forms need CSRF token. If the app fetches one after load, the fetch must complete before submit. Use `sleep 2` after navigation before filling.
 - **Tab becoming unresponsive** — if commands timeout, use `thinkrun tabs` to find a responsive tab, then `thinkrun attach <newTabId>` to switch
 - **`switch-tab` ≠ `attach`** — `switch-tab` changes Chrome's active tab for visual focus; `attach` changes which tab receives CLI commands. You need both when switching tabs.
 - **Cloud mode screenshot** — `thinkrun screenshot --output /tmp/sc.png --mode cloud` saves the file directly; read the path with the Read tool

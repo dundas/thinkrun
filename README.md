@@ -83,5 +83,5 @@ Hand it a ThinkRun recording. The structured "what happened" — actions, first 
 
 ## More
 
-- [thinkrun.ai](https://thinkrun.ai)
+- [thinkrun.ai](https://thinkrun.ai?utm_source=github&utm_medium=readme&utm_campaign=thinkrun-repo)
 - [Privacy Policy](https://thinkrun.ai/privacy)
