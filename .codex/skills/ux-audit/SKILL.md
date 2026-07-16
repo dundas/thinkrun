@@ -40,7 +40,8 @@ If testing against localhost, check what's actually on the port before assuming
 the right app is there — other services may be squatting the default port:
 
 ```bash
-lsof -iTCP:$PORT -sTCP:LISTEN 2>/dev/null | head -3
+PORT=$(printf '%s\n' "$PRODUCT_URL" | sed -nE 's#.*:([0-9]+).*#\1#p')
+[ -n "$PORT" ] && lsof -iTCP:"$PORT" -sTCP:LISTEN 2>/dev/null | head -3
 ```
 
 ---
