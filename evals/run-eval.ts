@@ -82,7 +82,7 @@ async function grade(rows: Row[], rawFile: string, absorb: Record<string, string
     const pf = (perFixture[r.fixture] ??= { pass: 0, total: 0, fails: [] });
     pf.total++;
     if (pass) pf.pass++;
-    else pf.fails.push({ id: r.id, expected: r.should_trigger ? acceptable.join("|") : `NOT ${acceptable.join("|")}`, got, q: r.query.slice(0, 70) });
+    else pf.fails.push({ id: r.id, expected: r.should_trigger ? acceptable.join("|") : `NOT ${forbidden.join("|")}`, got, q: r.query.slice(0, 70) });
   }
   const overall = Object.values(perFixture).reduce((a, p) => a + p.pass, 0);
   const out = { ...meta, overall: `${overall}/${rows.length}`, pct: +((overall / rows.length) * 100).toFixed(1), perFixture };
