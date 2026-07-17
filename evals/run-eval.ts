@@ -75,7 +75,10 @@ async function grade(rows: Row[], rawFile: string, absorb: Record<string, string
   for (const r of rows) {
     const got = byId.get(r.id) ?? "MISSING";
     const acceptable = absorb[r.fixture] ?? [r.fixture];
-    const pass = r.should_trigger ? acceptable.includes(got) : !acceptable.includes(got);
+    // Negatives must avoid the absorbing siblings AND the original fixture skill —
+    // answering a skill that isn't in the ablated catalog is a hallucination, not a pass.
+    const forbidden = absorb[r.fixture] ? [...acceptable, r.fixture] : acceptable;
+    const pass = r.should_trigger ? acceptable.includes(got) : !forbidden.includes(got);
     const pf = (perFixture[r.fixture] ??= { pass: 0, total: 0, fails: [] });
     pf.total++;
     if (pass) pf.pass++;
