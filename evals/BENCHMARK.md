@@ -66,3 +66,18 @@ Full catalog went 69-71/80 -> 79-80/80 (except sonnet-5, see below). The redunda
 
 ## The sonnet-5 "outlier" is principled, not broken
 All 7 of its mcp misses route generic-"MCP"-flavored asks ("via MCP, attach to my tab...") to web-browse — whose description explicitly claims "from the CLI or any MCP client". Sonnet applied "ONLY when the user explicitly names the thinkbrowse/thinkrun MCP server" strictly; the queries name MCP but not thinkbrowse. Functionally correct routing (user gets a working browser skill either way). We document rather than over-tune: chasing 80/80 here would be overfitting the fixture, and the umbrella skill absorbing interface-generic asks is the designed behavior the ablation eval validated.
+
+# Matrix v2 addendum — gpt-5.6 variants (sol / luna / terra), 2026-07-16
+
+Same v2 catalog (narrowed descriptions). Note: the bare `gpt-5.6` id is rejected on our Codex account; only the named variants resolve.
+
+| Config | low | medium | high |
+|---|---|---|---|
+| gpt-5.6-sol | 79/80 | 79/80 | 79/80 |
+| gpt-5.6-luna | 77/80 | 77/80 | 72/80 |
+| gpt-5.6-terra | **80/80** | **80/80** | 79/80 |
+
+## Findings
+1. terra matches the best of the board (perfect at low+medium); sol is flat 79 at every effort — its only miss is the known "verify the blog post renders correctly live" boundary query (-> ux-audit), at all three efforts.
+2. luna-high (72/80) fails the identical 7 thinkbrowse-mcp query ids as claude-sonnet-5 (22, 23, 25, 27, 28, 29, 30 — the generic-"MCP" asks, all routed to web-browse). The strict-MCP reading is therefore cross-family (a strictness disposition, not a Claude quirk), reinforcing the decision to document rather than tune: web-browse legitimately claims "any MCP client".
+3. Within luna, the strict reading correlates with effort: 1 of the 7 strict-MCP queries misses at low (id 22), 1 at medium (id 28), all 7 at high. Effort does not straightforwardly improve routing; luna-low also shows the run's only true over-capture (a "best headless browser library" knowledge question -> web-browse).
