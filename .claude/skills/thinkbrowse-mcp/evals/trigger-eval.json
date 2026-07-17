@@ -1,0 +1,22 @@
+[
+  {"query": "use the thinkbrowse MCP tools to open our staging site and screenshot the hero section", "should_trigger": true},
+  {"query": "you have browser MCP tools available — navigate to the admin panel and check if the new flag toggle shows up", "should_trigger": true},
+  {"query": "via MCP, attach to my open Chrome tab and click the Export button", "should_trigger": true},
+  {"query": "use your thinkbrowse MCP browser tools to go to docs.python.org and extract the table of contents", "should_trigger": true},
+  {"query": "through the MCP browser session, fill the search box on our site with 'refund policy' and screenshot the results", "should_trigger": true},
+  {"query": "I set up thinkbrowse as an MCP server in this session — use it to test the contact form", "should_trigger": true},
+  {"query": "with the MCP tools, scroll to the bottom of the changelog page and extract the last release date", "should_trigger": true},
+  {"query": "use set_mode to switch the browser session to cloud and open the pricing page", "should_trigger": true},
+  {"query": "drive the browser over MCP: log into staging with the test account and screenshot the dashboard", "should_trigger": true},
+  {"query": "using your MCP browser connection, check whether the promo banner is live on production", "should_trigger": true},
+  {"query": "add a new MCP server for Postgres to my Claude Code config", "should_trigger": false},
+  {"query": "explain what the Model Context Protocol is and how servers expose tools", "should_trigger": false},
+  {"query": "fetch https://example.com/robots.txt and show it to me", "should_trigger": false},
+  {"query": "write an MCP server in TypeScript that wraps our internal ticket API", "should_trigger": false},
+  {"query": "debug why my MCP config isn't loading in Cursor", "should_trigger": false},
+  {"query": "read the mcp.json in this repo and tell me which servers are configured", "should_trigger": false},
+  {"query": "what's the weather in Berlin right now?", "should_trigger": false},
+  {"query": "run npm run build and paste any type errors", "should_trigger": false},
+  {"query": "summarize this HTML file I downloaded yesterday at ~/Downloads/page.html", "should_trigger": false},
+  {"query": "write unit tests for the session manager module", "should_trigger": false}
+]

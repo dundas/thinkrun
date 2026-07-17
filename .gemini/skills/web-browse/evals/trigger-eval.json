@@ -1,0 +1,22 @@
+[
+  {"query": "open https://ourcompetitor.com/pricing in a browser and screenshot the whole page for me", "should_trigger": true},
+  {"query": "can you check if our marketing site loads correctly right now? actually click around a bit, don't just fetch it", "should_trigger": true},
+  {"query": "go to the demo signup form on example-saas.com and fill it with test data to see what happens after submit", "should_trigger": true},
+  {"query": "extract the speaker list from the conference site — it's rendered client-side so you'll need a real browser", "should_trigger": true},
+  {"query": "browse to my dashboard at app.ourapp.com — I'm logged in in Chrome — and tell me what the usage number says", "should_trigger": true},
+  {"query": "spin up a cloud browser and check whether our site shows the cookie banner for a fresh visitor", "should_trigger": true},
+  {"query": "verify the new blog post renders correctly live — images, code blocks, the works", "should_trigger": true},
+  {"query": "automate this: visit each of these 5 URLs and screenshot them", "should_trigger": true},
+  {"query": "click the 'Load more' button on the reviews page a few times and extract all the review text", "should_trigger": true},
+  {"query": "interact with the checkout on our staging site and tell me if the Apple Pay button appears", "should_trigger": true},
+  {"query": "fetch https://api.github.com/repos/anthropics/skills and show me the stars count", "should_trigger": false},
+  {"query": "do a full UX audit of our onboarding with a scored report and prioritized fixes", "should_trigger": false},
+  {"query": "write a Python scraper using requests and BeautifulSoup for this HTML file I saved", "should_trigger": false},
+  {"query": "read src/routes/api.ts and tell me which endpoints are unauthenticated", "should_trigger": false},
+  {"query": "what's the best headless browser library for Node these days?", "should_trigger": false},
+  {"query": "curl the sitemap.xml and count how many URLs are in it", "should_trigger": false},
+  {"query": "run the test suite and show me the failures", "should_trigger": false},
+  {"query": "download this PDF from the URL and summarize it", "should_trigger": false},
+  {"query": "write an E2E test in Cypress that covers the login flow", "should_trigger": false},
+  {"query": "explain how CORS preflight requests work", "should_trigger": false}
+]
