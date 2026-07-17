@@ -1,6 +1,6 @@
 ---
 name: thinkbrowse-mcp
-description: Control browsers via ThinkBrowse MCP tools — navigate pages, interact with elements, extract content, take screenshots. Use when the user asks to browse, scrape, test, audit, or automate anything in a browser using MCP tools. Do NOT use for simple URL fetching (use WebFetch tool instead).
+description: Control browsers via ThinkBrowse MCP tools — navigate pages, interact with elements, extract content, take screenshots. Use ONLY when the user explicitly references the thinkbrowse/thinkrun MCP server or its MCP tools. For general browse, scrape, or automation asks that don't name MCP, prefer the web-browse skill. Do NOT use for simple URL fetching (use WebFetch tool instead).
 category: browse
 sync: all
 tags: [browsing, automation, mcp, testing]

@@ -1,6 +1,6 @@
 ---
 name: thinkbrowse-cli
-description: Control browsers via the ThinkBrowse CLI — navigate pages, interact with elements, extract content, take screenshots. Use when the user asks to browse, scrape, test, audit, or automate anything in a browser using CLI commands. Do NOT use for simple URL fetching (use WebFetch tool instead).
+description: Control browsers via the ThinkBrowse CLI (the thinkbrowse / thinkrun command) — navigate pages, interact with elements, extract content, take screenshots. Use ONLY when the user explicitly names the thinkbrowse or thinkrun CLI, or asks to drive the browser from shell scripts / terminal commands. For general browse, scrape, or automation asks that don't name the CLI, prefer the web-browse skill. Do NOT use for simple URL fetching (use WebFetch tool instead).
 category: browse
 sync: all
 tags: [browsing, automation, scraping, testing, cli]

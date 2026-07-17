@@ -1,0 +1,22 @@
+[
+  {"query": "can you do a UX review of our new onboarding flow at staging.ourapp.com? walk through it like a new user and tell me everything that's confusing", "should_trigger": true},
+  {"query": "we just shipped the checkout redesign — verify the feature works end to end and flag anything that looks off", "should_trigger": true},
+  {"query": "is the signup page broken? a customer said they couldn't get past the email step", "should_trigger": true},
+  {"query": "QA the settings page for me, screenshot each section and score it", "should_trigger": true},
+  {"query": "walk through the password reset journey on our app and write up a report with fixes in priority order", "should_trigger": true},
+  {"query": "check how the empty state looks for a brand new account with no data", "should_trigger": true},
+  {"query": "audit the design of our pricing page — does the layout hold up on mobile widths?", "should_trigger": true},
+  {"query": "my boss wants a structured writeup of everything wrong with the dashboard UI before Thursday, can you go through it?", "should_trigger": true},
+  {"query": "does the error handling feel right when you submit the form with a bad card number? try it and tell me", "should_trigger": true},
+  {"query": "review the user experience of our login-through-first-project flow and list the top 3 fixes", "should_trigger": true},
+  {"query": "fix the bug where the submit button stays disabled after validation passes — it's in CheckoutForm.tsx", "should_trigger": false},
+  {"query": "scrape the top 10 product names and prices from competitor.com into a CSV", "should_trigger": false},
+  {"query": "read Button.tsx and explain why the onClick handler fires twice", "should_trigger": false},
+  {"query": "write Playwright tests for the login form", "should_trigger": false},
+  {"query": "deploy the frontend to staging so the team can look at it", "should_trigger": false},
+  {"query": "navigate to news.ycombinator.com and grab the top 5 headlines", "should_trigger": false},
+  {"query": "what's a good color contrast ratio for accessible body text?", "should_trigger": false},
+  {"query": "fetch https://api.ourapp.com/health and show me the JSON", "should_trigger": false},
+  {"query": "refactor the navbar component to use CSS grid instead of flexbox", "should_trigger": false},
+  {"query": "explain the difference between usability testing and A/B testing", "should_trigger": false}
+]
