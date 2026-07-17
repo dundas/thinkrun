@@ -50,9 +50,22 @@ Other tools give your agent eyes. ThinkRun gives it **structured sight** — con
 | Uses your real Chrome — your cookies & sessions | ✅ | ❌ headless only |
 | Runs alongside your browser, no profile conflict | ✅ | ❌ fights for Chrome profile |
 
-## Agent skills
+## Agent skills for Claude Code, Cursor, Codex & Gemini CLI
 
-Skills for Claude Code, Cursor, Codex, and Gemini CLI are in `.claude/skills/`, `.cursor/skills/`, `.codex/skills/`, and `.gemini/skills/`.
+Four portable [agent skills](https://agentskills.io) ship in this repo, mirrored for every major harness (`.claude/skills/`, `.cursor/skills/`, `.codex/skills/`, `.gemini/skills/`):
+
+- **web-browse** — browse the web programmatically: drive a real or cloud browser to navigate, interact, extract, and screenshot.
+- **ux-audit** — walk through a product UI as a real user, screenshot every step, and produce a structured UX report with a prioritized fix list.
+- **thinkbrowse-cli** — drive the browser from shell scripts via the `thinkrun` CLI.
+- **thinkbrowse-mcp** — drive the browser through the ThinkRun MCP server's tools.
+
+**Install without cloning** — the repo is served as a live MCP server that auto-updates on every commit:
+
+```json
+{ "mcpServers": { "thinkrun-skills": { "url": "https://mcp.skillsovermcp.com/mcp/dundas/thinkrun" } } }
+```
+
+**Trigger accuracy is measured, not claimed.** Every skill ships a 20-query trigger-eval fixture, and [`evals/BENCHMARK.md`](evals/BENCHMARK.md) publishes the results: 79–80/80 routing accuracy on 12 of the 16 published model configurations (GPT-5.4/5.5/5.6 and Claude Sonnet/Opus/Fable families; the outliers are a documented strict-reading mode, not crashes), plus catalog-ablation runs showing the skills absorb each other's traffic when installed as a subset. Reproduce with `bun evals/run-eval.ts build`.
 
 ## Manual binary install
 
