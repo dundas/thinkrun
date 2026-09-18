@@ -260,7 +260,9 @@ are the record there.
 
 ## Step 4 — The rule
 
-If any row is `fail` or `not-exercised`:
+If any row is `fail` or `not-exercised`, clean up first — `thinkrun audit off $T`
+(local) or `thinkrun cloud stop` (cloud) — so nothing keeps capturing or
+billing, then end with:
 
 > **Back to build.** Rows N, M did not pass. Fix, then run `/prove-it` again for
 > those targets. Do not open or update the PR with this report as "tested".
