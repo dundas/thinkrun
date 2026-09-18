@@ -5,7 +5,9 @@
 // trigger-eval fixture. Nothing ever writes to `.claude/`.
 //
 // Usage:
-//   bun scripts/sync-mirrors.ts                regenerate the mirrors from .claude
+//   bun scripts/sync-mirrors.ts                copy .claude/skills over the mirrors
+//                                              (never deletes; stale extras are
+//                                              reported by --check for a human)
 //   bun scripts/sync-mirrors.ts --check        validate; exit 1 on any violation
 //   bun scripts/sync-mirrors.ts --check --root <dir>
 //                                              validate another tree (tests only).
@@ -19,7 +21,7 @@
 //   3. every SKILL.md opens with YAML frontmatter whose `name` is kebab-case and
 //      equals its directory, and whose `description` is non-empty and <= 1024 chars
 
-import { readdirSync, readFileSync, lstatSync, mkdirSync, writeFileSync, rmSync, existsSync } from "node:fs";
+import { readdirSync, readFileSync, lstatSync, mkdirSync, writeFileSync, existsSync, realpathSync } from "node:fs";
 import { join, relative, dirname, resolve } from "node:path";
 
 export const CANONICAL = ".claude";
@@ -67,6 +69,14 @@ function skillDirs(root: string): string[] {
     .filter((d) => lstatSync(join(dir, d)).isDirectory());
 }
 
+// Read a regular file, or return null for anything else (directory, socket…)
+// so the caller reports a violation instead of throwing EISDIR.
+function readRegular(path: string): Buffer | null {
+  if (!existsSync(path)) return null;
+  const st = lstatSync(path);
+  return st.isFile() ? readFileSync(path) : null;
+}
+
 export function checkMirrors(root: string): Violation[] {
   const v: Violation[] = [];
   const canonDir = join(root, CANONICAL, "skills");
@@ -84,7 +94,12 @@ export function checkMirrors(root: string): Violation[] {
         v.push(`${mirror}/skills/${f}: missing (present in ${CANONICAL})`);
         continue;
       }
-      if (!readFileSync(join(canonDir, f)).equals(readFileSync(target))) {
+      const mirrorBytes = readRegular(target);
+      if (mirrorBytes === null) {
+        v.push(`${mirror}/skills/${f}: expected a regular file`);
+        continue;
+      }
+      if (!readFileSync(join(canonDir, f)).equals(mirrorBytes)) {
         v.push(`${mirror}/skills/${f}: differs from ${CANONICAL}/skills/${f}`);
       }
     }
@@ -177,26 +192,55 @@ export function check(root: string): Violation[] {
   for (const skill of skills) {
     const dir = join(root, CANONICAL, "skills", skill);
     const skillMd = join(dir, "SKILL.md");
-    if (!existsSync(skillMd)) v.push(`${CANONICAL}/skills/${skill}/SKILL.md: missing`);
-    else v.push(...checkSkill(skill, `${CANONICAL}/skills/${skill}/SKILL.md`, readFileSync(skillMd, "utf8")));
+    const skillBytes = readRegular(skillMd);
+    if (skillBytes === null) v.push(`${CANONICAL}/skills/${skill}/SKILL.md: missing or not a regular file`);
+    else v.push(...checkSkill(skill, `${CANONICAL}/skills/${skill}/SKILL.md`, skillBytes.toString("utf8")));
     const fixture = join(dir, "evals", "trigger-eval.json");
-    if (!existsSync(fixture)) v.push(`${CANONICAL}/skills/${skill}/evals/trigger-eval.json: missing`);
-    else v.push(...checkFixture(`${CANONICAL}/skills/${skill}/evals/trigger-eval.json`, readFileSync(fixture, "utf8")));
+    const fixtureBytes = readRegular(fixture);
+    if (fixtureBytes === null) v.push(`${CANONICAL}/skills/${skill}/evals/trigger-eval.json: missing or not a regular file`);
+    else v.push(...checkFixture(`${CANONICAL}/skills/${skill}/evals/trigger-eval.json`, fixtureBytes.toString("utf8")));
   }
   v.push(...checkMirrors(root));
   return v;
 }
 
+// Every write resolves its real path and must land beneath the real root.
+// This is what makes "sync only writes inside this checkout" true even when
+// a harness directory (e.g. `.cursor`) has been replaced by a symlink.
+function assertInside(root: string, path: string): void {
+  const realRoot = realpathSync(root);
+  // resolve the deepest existing ancestor, then re-append the rest
+  let probe = path;
+  let rest = "";
+  while (!existsSync(probe)) {
+    rest = join(probe.slice(dirname(probe).length + 1), rest);
+    probe = dirname(probe);
+  }
+  const real = join(realpathSync(probe), rest);
+  if (real !== realRoot && !real.startsWith(realRoot + "/")) {
+    throw new Error(`refusing to write outside the checkout: ${path} resolves to ${real}`);
+  }
+}
+
+// Copies canonical files over the mirrors. It never deletes: a stale extra
+// file in a mirror is reported by --check and removed by a human, so the only
+// destructive operation in this script is overwriting a mirror file with the
+// canonical bytes of the same relative path.
 export function sync(root: string): string[] {
   const canonDir = join(root, CANONICAL, "skills");
   if (!existsSync(canonDir)) throw new Error(`${canonDir} does not exist; refusing to sync`);
   const written: string[] = [];
   for (const mirror of MIRRORS) {
     const mirrorDir = join(root, mirror, "skills");
-    rmSync(mirrorDir, { recursive: true, force: true });
-    for (const d of walkDirs(canonDir)) mkdirSync(join(mirrorDir, d), { recursive: true });
+    assertInside(root, mirrorDir);
+    for (const d of walkDirs(canonDir)) {
+      const target = join(mirrorDir, d);
+      assertInside(root, target);
+      mkdirSync(target, { recursive: true });
+    }
     for (const f of walk(canonDir)) {
       const target = join(mirrorDir, f);
+      assertInside(root, target);
       mkdirSync(dirname(target), { recursive: true });
       writeFileSync(target, readFileSync(join(canonDir, f)));
       written.push(`${mirror}/skills/${f}`);
