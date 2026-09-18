@@ -1,0 +1,5 @@
+# Skill text and fixtures are compared byte-for-byte across harness mirrors.
+*.md text eol=lf
+*.json text eol=lf
+*.ts text eol=lf
+*.yml text eol=lf

@@ -1,0 +1,9 @@
+{
+  "name": "thinkrun-skills",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "bun scripts/check-skills.ts",
+    "test": "bun test scripts/"
+  }
+}
