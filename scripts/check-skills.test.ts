@@ -104,6 +104,16 @@ test("CLI --links-only exits 1 on a link and 0 on a clean tree", async () => {
   expect(await new Response(proc.stderr).text()).toContain(".gemini: symlink");
 });
 
+test("a regular file in place of a skills directory is a violation, not a crash", () => {
+  rmSync(join(root, ".codex/skills"), { recursive: true });
+  writeFileSync(join(root, ".codex/skills"), "not a dir");
+  expect(check(root)).toEqual([".codex/skills: missing or not a directory"]);
+  expect(checkLinks(root)).toEqual([]);
+  rmSync(join(root, CANONICAL, "skills"), { recursive: true });
+  writeFileSync(join(root, CANONICAL, "skills"), "not a dir");
+  expect(check(root)).toEqual([".claude/skills: missing or not a directory"]);
+});
+
 test("a directory in place of an expected file is a violation, not a crash", () => {
   rmSync(join(root, ".cursor/skills/alpha/SKILL.md"));
   mkdirSync(join(root, ".cursor/skills/alpha/SKILL.md"));

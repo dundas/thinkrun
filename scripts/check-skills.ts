@@ -64,8 +64,16 @@ function isSymlink(path: string): boolean {
 // Symlinks are never followed: a mirror made of links to the canonical files
 // would compare equal by content while not being a copy, and a dangling link
 // would crash the read. They are collected and reported as violations.
+function isRealDir(path: string): boolean {
+  try {
+    return lstatSync(path).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
 function walk(dir: string, base = dir, symlinks: string[] = []): string[] {
-  if (!existsSync(dir)) return [];
+  if (!isRealDir(dir)) return [];
   const out: string[] = [];
   for (const entry of readdirSync(dir).sort()) {
     const full = join(dir, entry);
@@ -78,7 +86,7 @@ function walk(dir: string, base = dir, symlinks: string[] = []): string[] {
 }
 
 function walkDirs(dir: string, base = dir): string[] {
-  if (!existsSync(dir)) return [];
+  if (!isRealDir(dir)) return [];
   const out: string[] = [];
   for (const entry of readdirSync(dir).sort()) {
     const full = join(dir, entry);
@@ -92,7 +100,7 @@ function walkDirs(dir: string, base = dir): string[] {
 
 function skillDirs(root: string): string[] {
   const dir = join(root, CANONICAL, "skills");
-  if (!existsSync(dir)) return [];
+  if (!isRealDir(dir)) return [];
   return readdirSync(dir)
     .sort()
     .filter((d) => lstatSync(join(dir, d)).isDirectory());
@@ -121,6 +129,10 @@ export function checkMirrors(root: string): Violation[] {
     if (rootLink) {
       v.push(`${rootLink}: symlink (mirrors must be real directories)`);
       continue; // never walk through it
+    }
+    if (!isRealDir(mirrorDir)) {
+      v.push(`${mirror}/skills: missing or not a directory`);
+      continue;
     }
     const mirrorLinks: string[] = [];
     const mirrorFiles = walk(mirrorDir, mirrorDir, mirrorLinks);
@@ -246,6 +258,7 @@ export function check(root: string): Violation[] {
   const v: Violation[] = [];
   const canonLink = symlinkInPath(root, join(root, CANONICAL, "skills"));
   if (canonLink) return [`${canonLink}: symlink (the canonical tree must be a real directory)`];
+  if (!isRealDir(join(root, CANONICAL, "skills"))) return [`${CANONICAL}/skills: missing or not a directory`];
   const skills = skillDirs(root);
   if (skills.length === 0) v.push(`${CANONICAL}/skills: no skills found`);
   for (const skill of skills) {
