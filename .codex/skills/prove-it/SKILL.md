@@ -299,6 +299,12 @@ Clean up: `thinkrun audit off $T` (local) or `thinkrun cloud stop` (cloud).
   adjudication, backed by the captures. Say so if asked.
 - The `--audit` screenshot is best-effort. If it is missing for a step, the
   named capture you took is still the evidence.
+- Cloud mode has no per-command session flag; `same_session` checks the
+  active session before each target, and another process can still switch it
+  between that check and a capture. Local mode with `--tab` has no such gap.
+- The localhost check confirms a listener answers on the port, not that it is
+  the exact process for the revision under test; if that matters, expose a
+  build id on the app and read it before capturing.
 
 ---
 
