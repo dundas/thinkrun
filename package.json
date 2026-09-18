@@ -3,8 +3,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "check": "bun scripts/sync-mirrors.ts --check",
-    "sync": "bun scripts/sync-mirrors.ts",
+    "check": "bun scripts/check-skills.ts",
+    "sync": "for m in .cursor .codex .gemini; do rm -rf \"$m/skills\" && cp -R .claude/skills \"$m/skills\"; done && bun scripts/check-skills.ts",
     "test": "bun test scripts/"
   }
 }

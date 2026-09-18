@@ -2,9 +2,19 @@ import { test, expect, beforeEach, afterEach } from "bun:test";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync, existsSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { check, sync, checkFixture, checkSkill, parseFrontmatter, CANONICAL, MIRRORS, FIXTURE_SIZE, REPO_ROOT } from "./sync-mirrors";
+import { check, checkFixture, checkSkill, parseFrontmatter, CANONICAL, MIRRORS, FIXTURE_SIZE, REPO_ROOT } from "./check-skills";
+import { cpSync } from "node:fs";
 
 let root: string;
+
+// The production copy is `bun run sync` (rm -rf + cp -R per mirror). Tests
+// reproduce it with cpSync so a clean tree can be built without shelling out.
+function copyMirrors(base: string) {
+  for (const m of MIRRORS) {
+    rmSync(join(base, m, "skills"), { recursive: true, force: true });
+    cpSync(join(base, CANONICAL, "skills"), join(base, m, "skills"), { recursive: true });
+  }
+}
 
 function fixture(positives = 10, total = FIXTURE_SIZE): string {
   const arr = Array.from({ length: total }, (_, i) => ({
@@ -29,7 +39,7 @@ beforeEach(() => {
   root = mkdtempSync(join(tmpdir(), "sync-mirrors-"));
   writeSkill(join(root, CANONICAL), "alpha");
   writeSkill(join(root, CANONICAL), "beta-two");
-  sync(root);
+  copyMirrors(root);
 });
 
 afterEach(() => rmSync(root, { recursive: true, force: true }));
@@ -38,31 +48,9 @@ test("identical mirrors pass", () => {
   expect(check(root)).toEqual([]);
 });
 
-test("sync never deletes: an extra mirror file survives sync and is reported by check", () => {
-  writeFileSync(join(root, ".cursor/skills/alpha/stale.md"), "stale");
-  sync(root);
-  expect(existsSync(join(root, ".cursor/skills/alpha/stale.md"))).toBe(true);
-  expect(check(root)).toEqual([".cursor/skills/alpha/stale.md: extra file (not in .claude)"]);
-});
-
-test("sync refuses to write through a symlinked harness directory", () => {
-  const outside = mkdtempSync(join(tmpdir(), "outside-"));
-  try {
-    rmSync(join(root, ".gemini"), { recursive: true });
-    symlinkSync(outside, join(root, ".gemini"));
-    expect(() => sync(root)).toThrow(/refusing to write outside the checkout/);
-    expect(existsSync(join(outside, "skills"))).toBe(false);
-  } finally {
-    rmSync(outside, { recursive: true, force: true });
-  }
-});
-
-test("a symlinked harness dir pointing INSIDE the checkout (.cursor -> .claude) is refused by sync and named by check", () => {
+test("a symlinked harness dir pointing INSIDE the checkout (.cursor -> .claude) is named by check", () => {
   rmSync(join(root, ".cursor"), { recursive: true });
   symlinkSync(join(root, CANONICAL), join(root, ".cursor"));
-  const before = readFileSync(join(root, CANONICAL, "skills/alpha/SKILL.md"), "utf8");
-  expect(() => sync(root)).toThrow(/passes through symlink \.cursor/);
-  expect(readFileSync(join(root, CANONICAL, "skills/alpha/SKILL.md"), "utf8")).toBe(before);
   expect(check(root)).toContain(".cursor: symlink (mirrors must be real directories)");
 });
 
@@ -73,26 +61,9 @@ test("a symlinked skills dir or canonical tree is named and never walked", () =>
     rmSync(join(root, ".codex/skills"), { recursive: true });
     symlinkSync(outside, join(root, ".codex/skills"));
     expect(check(root)).toContain(".codex/skills: symlink (mirrors must be real directories)");
-    expect(() => sync(root)).toThrow(/passes through symlink \.codex\/skills/);
-    expect(existsSync(join(outside, "alpha/SKILL.md"))).toBe(false);
     rmSync(join(root, CANONICAL, "skills"), { recursive: true });
     symlinkSync(outside, join(root, CANONICAL, "skills"));
     expect(check(root)).toEqual([".claude/skills: symlink (the canonical tree must be a real directory)"]);
-    expect(() => sync(root)).toThrow(/refusing to sync: \.claude\/skills is a symlink/);
-  } finally {
-    rmSync(outside, { recursive: true, force: true });
-  }
-});
-
-test("a dangling symlink at a mirror file destination is refused by sync, not written through", () => {
-  const outside = mkdtempSync(join(tmpdir(), "outside-"));
-  try {
-    const dest = join(root, ".gemini/skills/alpha/SKILL.md");
-    rmSync(dest);
-    symlinkSync(join(outside, "does-not-exist-yet.md"), dest);
-    expect(() => sync(root)).toThrow(/passes through symlink \.gemini\/skills\/alpha\/SKILL\.md/);
-    expect(existsSync(join(outside, "does-not-exist-yet.md"))).toBe(false);
-    expect(check(root)).toContain(".gemini/skills/alpha/SKILL.md: symlink (mirrors must be copies)");
   } finally {
     rmSync(outside, { recursive: true, force: true });
   }
@@ -117,19 +88,11 @@ test("a directory in place of an expected file is a violation, not a crash", () 
   mkdirSync(join(root, ".cursor/skills/alpha/SKILL.md"));
   expect(check(root)).toContain(".cursor/skills/alpha/SKILL.md: expected a regular file");
   rmSync(join(root, ".cursor/skills/alpha/SKILL.md"), { recursive: true });
-  sync(root);
+  copyMirrors(root);
   rmSync(join(root, CANONICAL, "skills/beta-two/evals/trigger-eval.json"));
   mkdirSync(join(root, CANONICAL, "skills/beta-two/evals/trigger-eval.json"));
   const v = check(root);
   expect(v).toContain(".claude/skills/beta-two/evals/trigger-eval.json: missing or not a regular file");
-});
-
-test("sync never writes to the canonical tree", () => {
-  const before = readFileSync(join(root, CANONICAL, "skills/alpha/SKILL.md"), "utf8");
-  writeFileSync(join(root, ".cursor/skills/alpha/SKILL.md"), "garbage");
-  sync(root);
-  expect(readFileSync(join(root, CANONICAL, "skills/alpha/SKILL.md"), "utf8")).toBe(before);
-  expect(readFileSync(join(root, ".cursor/skills/alpha/SKILL.md"), "utf8")).toBe(before);
 });
 
 test("(i) one changed byte in a mirror fails and names the file", () => {
@@ -156,7 +119,7 @@ test("extra or missing directory in a mirror fails, even when empty", () => {
   mkdirSync(join(root, CANONICAL, "skills/alpha/references"));
   v = check(root);
   expect(v).toEqual(MIRRORS.map((m) => `${m}/skills/alpha/references/: missing directory (present in .claude)`));
-  sync(root);
+  copyMirrors(root);
   expect(check(root)).toEqual([]);
 });
 
@@ -166,18 +129,15 @@ test("CRLF frontmatter parses the same as LF", () => {
   expect(parseFrontmatter(crlf)?.name).toBe("alpha");
 });
 
-test("symlinks are violations, in mirrors and in the canonical tree, and never followed", () => {
+test("symlinks are violations, in mirrors and in the canonical tree, and never followed (a copy fixes it)", () => {
   rmSync(join(root, ".codex/skills/alpha/SKILL.md"));
   symlinkSync(join(root, CANONICAL, "skills/alpha/SKILL.md"), join(root, ".codex/skills/alpha/SKILL.md"));
   let v = check(root);
   // the link is named even though its target's bytes match; nothing is followed
   expect(v).toContain(".codex/skills/alpha/SKILL.md: symlink (mirrors must be copies)");
   expect(v.some((x) => x.includes("differs"))).toBe(false);
-  // sync refuses to write through the link and does not delete it; a human removes it
-  expect(() => sync(root)).toThrow(/passes through symlink \.codex\/skills\/alpha\/SKILL\.md/);
-  expect(check(root)).toContain(".codex/skills/alpha/SKILL.md: symlink (mirrors must be copies)");
   rmSync(join(root, ".codex/skills/alpha/SKILL.md"));
-  sync(root);
+  copyMirrors(root);
   expect(check(root)).toEqual([]);
   symlinkSync("/nonexistent/target", join(root, CANONICAL, "skills/alpha/dangling"));
   v = check(root);
@@ -240,18 +200,9 @@ test("malformed frontmatter is a violation, not a pass", () => {
   expect(checkSkill("alpha", "p", "---\n- a\n- b\n---\n")).toEqual(["p: missing or malformed YAML frontmatter (must open and close with --- on its own line)"]);
 });
 
-test("CLI sync mode refuses --root entirely, so it can only write inside this checkout", async () => {
-  const stray = join(root, ".cursor/skills/alpha/SKILL.md");
-  const before = readFileSync(stray, "utf8");
-  const proc = Bun.spawn(["bun", join(import.meta.dir, "sync-mirrors.ts"), "--root", root], { cwd: root, stdout: "pipe", stderr: "pipe" });
-  expect(await proc.exited).toBe(2);
-  expect(await new Response(proc.stderr).text()).toContain("--root is only valid with --check");
-  expect(readFileSync(stray, "utf8")).toBe(before);
-});
-
 test("CLI rejects a bare --root instead of resolving it to cwd", async () => {
   for (const argv of [["--check", "--root"], ["--root", "--check"]]) {
-    const proc = Bun.spawn(["bun", join(import.meta.dir, "sync-mirrors.ts"), ...argv], { cwd: root, stdout: "pipe", stderr: "pipe" });
+    const proc = Bun.spawn(["bun", join(import.meta.dir, "check-skills.ts"), ...argv], { cwd: root, stdout: "pipe", stderr: "pipe" });
     expect(await proc.exited).toBe(2);
     expect(await new Response(proc.stderr).text()).toContain("--root requires a directory argument");
   }
@@ -292,7 +243,7 @@ test("real repo fixtures and skills pass the checks", () => {
 test("CLI --check exits 1 with the violation text on drift", async () => {
   const p = join(root, ".cursor/skills/alpha/SKILL.md");
   writeFileSync(p, readFileSync(p, "utf8") + "\n");
-  const proc = Bun.spawn(["bun", join(import.meta.dir, "sync-mirrors.ts"), "--check", "--root", root], { cwd: tmpdir(), stderr: "pipe", stdout: "pipe" });
+  const proc = Bun.spawn(["bun", join(import.meta.dir, "check-skills.ts"), "--check", "--root", root], { cwd: tmpdir(), stderr: "pipe", stdout: "pipe" });
   const code = await proc.exited;
   const err = await new Response(proc.stderr).text();
   expect(code).toBe(1);
@@ -302,13 +253,13 @@ test("CLI --check exits 1 with the violation text on drift", async () => {
 });
 
 test("CLI without --root checks this checkout even when cwd is elsewhere", async () => {
-  const proc = Bun.spawn(["bun", join(import.meta.dir, "sync-mirrors.ts"), "--check"], { cwd: root, stdout: "pipe", stderr: "pipe" });
+  const proc = Bun.spawn(["bun", join(import.meta.dir, "check-skills.ts"), "--check"], { cwd: root, stdout: "pipe", stderr: "pipe" });
   expect(await proc.exited).toBe(0);
   expect(await new Response(proc.stdout).text()).toMatch(/skills-check: ok \(\d+ skills, 3 mirrors\)/);
 });
 
 test("CLI --check exits 0 on a clean tree", async () => {
-  const proc = Bun.spawn(["bun", join(import.meta.dir, "sync-mirrors.ts"), "--check", "--root", root], { cwd: tmpdir(), stdout: "pipe", stderr: "pipe" });
+  const proc = Bun.spawn(["bun", join(import.meta.dir, "check-skills.ts"), "--check", "--root", root], { cwd: tmpdir(), stdout: "pipe", stderr: "pipe" });
   expect(await proc.exited).toBe(0);
   expect(await new Response(proc.stdout).text()).toContain("skills-check: ok (2 skills, 3 mirrors)");
 });

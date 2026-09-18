@@ -1,28 +1,23 @@
-// Mirror generator + validator for the harness skill directories.
+// Validator for the harness skill directories. Read-only.
 //
 // `.claude/skills/` is canonical. `.cursor/`, `.codex/` and `.gemini/` are
 // byte-for-byte copies so every harness sees the same skill text and the same
-// trigger-eval fixture. Nothing ever writes to `.claude/`.
+// trigger-eval fixture. This script never writes anything; regenerating the
+// mirrors is the plain copy in package.json (`bun run sync`).
 //
 // Usage:
-//   bun scripts/sync-mirrors.ts                copy .claude/skills over the mirrors
-//                                              (never deletes; stale extras are
-//                                              reported by --check for a human)
-//   bun scripts/sync-mirrors.ts --check        validate; exit 1 on any violation
-//   bun scripts/sync-mirrors.ts --check --root <dir>
-//                                              validate another tree (tests only).
-//                                              sync mode has no --root: it only ever
-//                                              writes inside this checkout
+//   bun scripts/check-skills.ts                validate this checkout; exit 1 on any violation
+//   bun scripts/check-skills.ts --root <dir>   validate another tree (tests)
 //
-// --check enforces:
+// The check enforces:
 //   1. every mirror equals .claude/skills (both directions, byte compare)
 //   2. every evals/trigger-eval.json is a 20-entry array of
 //      {query: string, should_trigger: boolean}, exactly 10 true, unique queries
 //   3. every SKILL.md opens with YAML frontmatter whose `name` is kebab-case and
 //      equals its directory, and whose `description` is non-empty and <= 1024 chars
 
-import { readdirSync, readFileSync, lstatSync, mkdirSync, writeFileSync, existsSync } from "node:fs";
-import { join, relative, dirname, resolve, sep } from "node:path";
+import { readdirSync, readFileSync, lstatSync, existsSync } from "node:fs";
+import { join, relative, resolve, sep } from "node:path";
 
 export const CANONICAL = ".claude";
 export const MIRRORS = [".cursor", ".codex", ".gemini"];
@@ -35,13 +30,9 @@ type Violation = string;
 // The single symlink rule. Returns the first path component, from `root`
 // down to `path` inclusive, that is a symlink — or null.
 //
-// Scope, stated plainly: this protects a developer from an accidental link in
-// their own checkout (a stray `.cursor -> ../elsewhere`, a dangling mirror
-// file). It is a check-then-act sequence, so it is NOT a defence against a
-// concurrent process swapping a directory for a link between the check and
-// the write. Anyone who can race a filesystem you are writing to already
-// owns it; this script makes no security claim beyond "it will not follow a
-// link it can see". Only components that
+// This script only reads. The rule exists so a mirror made of links, or a
+// link leading out of the checkout, is reported as "not a copy" instead of
+// being followed and compared by content. Only components that
 // exist are inspected (a not-yet-created file has no link to be). Every read
 // root and every write destination in this script goes through this, so a
 // harness directory, a skills directory, a file, or a dangling link at any
@@ -250,43 +241,6 @@ export function check(root: string): Violation[] {
   return v;
 }
 
-// Before any mkdir or write: no component of the destination, from the repo
-// root down, may be a symlink. The checkout is the only tree sync can touch
-// because a write can only leave it through a link, and links are refused.
-function assertWritable(root: string, path: string): void {
-  const link = symlinkInPath(root, path);
-  if (link) throw new Error(`refusing to write outside the checkout: ${relative(root, path)} passes through symlink ${link}`);
-}
-
-// Copies canonical files over the mirrors. It never deletes: a stale extra
-// file in a mirror is reported by --check and removed by a human, so the only
-// destructive operation in this script is overwriting a mirror file with the
-// canonical bytes of the same relative path.
-export function sync(root: string): string[] {
-  const canonDir = join(root, CANONICAL, "skills");
-  if (!existsSync(canonDir)) throw new Error(`${canonDir} does not exist; refusing to sync`);
-  const canonLink = symlinkInPath(root, canonDir);
-  if (canonLink) throw new Error(`refusing to sync: ${canonLink} is a symlink`);
-  const written: string[] = [];
-  for (const mirror of MIRRORS) {
-    const mirrorDir = join(root, mirror, "skills");
-    assertWritable(root, mirrorDir);
-    for (const d of walkDirs(canonDir)) {
-      const target = join(mirrorDir, d);
-      assertWritable(root, target);
-      mkdirSync(target, { recursive: true });
-    }
-    for (const f of walk(canonDir)) {
-      const target = join(mirrorDir, f);
-      assertWritable(root, target);
-      mkdirSync(dirname(target), { recursive: true });
-      writeFileSync(target, readFileSync(join(canonDir, f)));
-      written.push(`${mirror}/skills/${f}`);
-    }
-  }
-  return written;
-}
-
 // The repo root is derived from this file's location, never from cwd, so the
 // script can't be pointed at another checkout's .cursor/.codex/.gemini by
 // accident (mech-browse, for one, has all three).
@@ -294,40 +248,21 @@ export const REPO_ROOT = resolve(import.meta.dir, "..");
 
 if (import.meta.main) {
   const args = process.argv.slice(2);
-  const mode = args.includes("--check") ? "check" : "sync";
   const rootIdx = args.indexOf("--root");
   let root = REPO_ROOT;
   if (rootIdx !== -1) {
-    // --root is read-only by construction: it is accepted with --check only.
-    // sync deletes and rewrites mirror directories, so it never takes a root
-    // argument — the only tree it can touch is the checkout this file lives in.
-    if (mode !== "check") {
-      console.error("sync-mirrors: --root is only valid with --check (sync never writes outside this checkout)");
-      process.exit(2);
-    }
     const value = args[rootIdx + 1];
     if (!value || value.startsWith("-")) {
-      console.error("sync-mirrors: --root requires a directory argument");
+      console.error("check-skills: --root requires a directory argument");
       process.exit(2);
     }
     root = resolve(value);
   }
-  if (mode === "check") {
-    const violations = check(root);
-    if (violations.length) {
-      console.error(`skills-check: ${violations.length} violation(s)`);
-      for (const line of violations) console.error(`  - ${line}`);
-      process.exit(1);
-    }
-    console.log(`skills-check: ok (${skillDirs(root).length} skills, ${MIRRORS.length} mirrors)`);
-  } else {
-    const written = sync(root);
-    console.log(`sync-mirrors: wrote ${written.length} files across ${MIRRORS.join(", ")}`);
-    const violations = check(root);
-    if (violations.length) {
-      console.error("sync-mirrors: canonical tree has violations; mirrors were synced but fix these:");
-      for (const line of violations) console.error(`  - ${line}`);
-      process.exit(1);
-    }
+  const violations = check(root);
+  if (violations.length) {
+    console.error(`skills-check: ${violations.length} violation(s)`);
+    for (const line of violations) console.error(`  - ${line}`);
+    process.exit(1);
   }
+  console.log(`skills-check: ok (${skillDirs(root).length} skills, ${MIRRORS.length} mirrors)`);
 }
