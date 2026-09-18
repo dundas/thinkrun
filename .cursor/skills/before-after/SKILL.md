@@ -37,20 +37,32 @@ Local mode for anything behind login or on localhost; cloud mode for public
 URLs with no display (cloud browsers cannot reach your `localhost`). (Cloud path: command surface verified against CLI 0.1.37; not smoke-tested
 when this skill shipped — a session-provisioning incident on 2026-09-18.)
 
+Run exactly one of the two blocks.
+
+**Local** (behind login, or localhost):
+
 ```bash
-# local — open your OWN window. A capture needs the tab visible; on a shared
-# machine another agent's window can be in front, and Chrome returns
-# "image readback failed" for a hidden tab.
+# open your OWN window. A capture needs the tab visible; on a shared machine another
+# agent's window can be in front, and Chrome returns "image readback failed" for a hidden tab.
 TAB_ID=$(thinkrun new-window "about:blank" --json | jq -er .data.tabId) || exit 1; T="--tab $TAB_ID"
 visible() { [ "$(thinkrun evaluate 'document.visibilityState' $T --json | jq -r .data)" = "visible" ] || { echo "tab is hidden; bring the window forward and retake"; exit 1; }; }
-# cloud
+same_session() { :; }
+```
+
+**Cloud** (public URL, no display):
+
+```bash
 SID=$(thinkrun cloud start --json | jq -er .data.sessionId) || exit 1; T="--mode cloud"
 trap 'thinkrun cloud stop -s "$SID" >/dev/null 2>&1' EXIT      # stops THIS session, never whatever is active
 # the active cloud session is machine-wide state; there is no per-command session flag,
 # so assert it before every navigate and capture:
 same_session() { [ "$(thinkrun cloud status --json | jq -r .data.sessionId)" = "$SID" ] || { echo "active cloud session changed; stop"; exit 1; }; }
-visible() { [ "$(thinkrun evaluate 'document.visibilityState' $T --json | jq -r .data)" = "visible" ] || { echo "tab is hidden; bring the window forward and retake"; exit 1; }; }
+visible() { [ "$(thinkrun evaluate 'document.visibilityState' $T --json | jq -r .data)" = "visible" ] || { echo "tab is hidden; retake"; exit 1; }; }
+```
 
+Then, for either:
+
+```bash
 TASK=<short-slug>; mkdir -p .artifacts/$TASK        # gitignored; evidence is posted, never committed
 ```
 
@@ -69,7 +81,7 @@ fix exists. If you are also running `prove-it`, its `before-*.png` is this.
 
 ```bash
 BEFORE_URL=<pre-change build>
-[ "$T" = "--mode cloud" ] && same_session
+same_session
 thinkrun navigate "$BEFORE_URL" $T; sleep 2; visible
 thinkrun screenshot --output .artifacts/$TASK/before.png --selector "<css>" --max-dimension 1280 --caption "before" $T
 ```
@@ -84,7 +96,7 @@ device emulation), the pair is not comparable — retake both.
 
 ```bash
 AFTER_URL=<the change under test>
-[ "$T" = "--mode cloud" ] && same_session
+same_session
 thinkrun navigate "$AFTER_URL" $T; sleep 2; visible
 thinkrun screenshot --output .artifacts/$TASK/after.png --selector "<css>" --max-dimension 1280 --caption "after" $T
 ```
@@ -131,6 +143,9 @@ PNGs are in `.artifacts/$TASK/` for them to drag into the PR.
 ---
 
 ## Step 4 — Post
+
+Save the Step 3 table as `.artifacts/$TASK/before-after.md` (the two image
+references and the one-line caption), then:
 
 ```bash
 gh pr comment <n> --body-file .artifacts/$TASK/before-after.md
