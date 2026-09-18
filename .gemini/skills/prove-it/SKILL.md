@@ -96,11 +96,13 @@ If a target is a bug fix, capture the failure **before** applying the fix. It is
 the cheapest moment to prove the bug existed, and the after-shot means nothing
 without it.
 
-The before capture must come from the **pre-fix build**: the base branch
-checked out and running, the previous deployment URL, or `git stash` of the
-fix. Capturing the current (fixed) build and calling it "before" is
-mislabelled evidence. If no pre-fix build is reachable, write
-`before: unavailable` in the report — do not fabricate one.
+The before capture must come from the **pre-fix build**: the previous
+deployment URL, or the base revision in a **separate worktree**
+(`git worktree add /tmp/before origin/main` and run it on another port) — never
+by stashing or checking out over the user's working tree. Capturing the
+current (fixed) build and calling it "before" is mislabelled evidence. If no
+pre-fix build is reachable, write `before: unavailable` in the report — do not
+fabricate one.
 
 ```bash
 # on the pre-fix build:
@@ -190,8 +192,10 @@ the Activity Feed. The page for it is owner-only; a reviewer needs a **share**:
 ```bash
 CFG=$(thinkrun config show | sed -n 's/^Config file: //p'); CFG=${CFG:-$HOME/.config/thinkrun/config.json}
 API=$(jq -r .apiUrl "$CFG"); KEY=$(jq -r .apiKey "$CFG")   # read once, used once, never echoed
-SID=$(jq -r .sessionId ~/.thinkrun/local-session-$TAB_ID.json)     # local mode
-# cloud mode: SID=$(thinkrun cloud start --json | jq -r .data.sessionId), or `thinkrun cloud status --json`
+# local mode: the Activity Feed session for the tab you pinned (NOT the id from `session debug`)
+[ "$T" = "--mode cloud" ] || SID=$(jq -r .sessionId ~/.thinkrun/local-session-$TAB_ID.json)
+# cloud mode: SID is the one you captured in Step 0; if lost, `thinkrun cloud status --json | jq -r .data.sessionId`
+# never start a new cloud session here — it would be empty
 # the key goes to curl via a config on stdin, never as an argument (argv is visible to `ps`)
 TOKEN=$(printf 'header = "x-api-key: %s"\n' "$KEY" | curl -s -K - -X POST "$API/api/share" \
   -H 'content-type: application/json' -d "{\"sourceType\":\"session\",\"sourceId\":\"$SID\"}" | jq -r .token)
