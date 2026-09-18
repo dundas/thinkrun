@@ -1,0 +1,69 @@
+{
+ "config": "v3-claude-sonnet-5",
+ "overall": "94/100",
+ "pct": 94,
+ "perFixture": {
+  "prove-it": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "thinkbrowse-cli": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "thinkbrowse-mcp": {
+   "pass": 14,
+   "total": 20,
+   "fails": [
+    {
+     "id": 42,
+     "expected": "thinkbrowse-mcp",
+     "got": "web-browse",
+     "q": "you have browser MCP tools available — navigate to the admin panel and"
+    },
+    {
+     "id": 43,
+     "expected": "thinkbrowse-mcp",
+     "got": "web-browse",
+     "q": "via MCP, attach to my open Chrome tab and click the Export button"
+    },
+    {
+     "id": 45,
+     "expected": "thinkbrowse-mcp",
+     "got": "web-browse",
+     "q": "through the MCP browser session, fill the search box on our site with "
+    },
+    {
+     "id": 47,
+     "expected": "thinkbrowse-mcp",
+     "got": "web-browse",
+     "q": "with the MCP tools, scroll to the bottom of the changelog page and ext"
+    },
+    {
+     "id": 49,
+     "expected": "thinkbrowse-mcp",
+     "got": "web-browse",
+     "q": "drive the browser over MCP: log into staging with the test account and"
+    },
+    {
+     "id": 50,
+     "expected": "thinkbrowse-mcp",
+     "got": "web-browse",
+     "q": "using your MCP browser connection, check whether the promo banner is l"
+    }
+   ]
+  },
+  "ux-audit": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "web-browse": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  }
+ }
+}

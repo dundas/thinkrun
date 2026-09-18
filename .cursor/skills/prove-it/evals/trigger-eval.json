@@ -1,0 +1,22 @@
+[
+  {"query": "I just pushed the coupon validation fix on feat/coupons — prove it works and attach the evidence to PR #212", "should_trigger": true},
+  {"query": "we just shipped the checkout redesign in PR #340 — verify the feature works end to end and post proof to the PR", "should_trigger": true},
+  {"query": "before I merge this, show me it actually working: the export button should download a CSV with 3 columns", "should_trigger": true},
+  {"query": "did the agent actually test the login change or just say it did? run the prove step on this branch", "should_trigger": true},
+  {"query": "run the prove step of the workflow for the current branch and give me the pass/fail table", "should_trigger": true},
+  {"query": "the dashboard perf fix claims sub-300ms loads — measure before and after in a real browser and put the numbers on the PR", "should_trigger": true},
+  {"query": "attach evidence to PR #88 that the password reset email link now lands on the new page", "should_trigger": true},
+  {"query": "this bug fix is supposedly done. capture the failing state first, then prove the fix, then post both to the issue", "should_trigger": true},
+  {"query": "my PR description says 'tested locally' — replace that with real proof from the app: screenshots, console, network", "should_trigger": true},
+  {"query": "quality control on my change: three targets — the modal opens, the form rejects empty input, the save call returns 200", "should_trigger": true},
+  {"query": "walk through the new checkout redesign as a first-time buyer and flag everything that looks off", "should_trigger": false},
+  {"query": "do a UX review of our onboarding flow and give me a prioritized fix list", "should_trigger": false},
+  {"query": "is our pricing page broken on mobile widths? go through it and write up what's wrong", "should_trigger": false},
+  {"query": "audit the dashboard UI before Thursday — everything confusing, in priority order", "should_trigger": false},
+  {"query": "go check whether the pricing page loads and screenshot it", "should_trigger": false},
+  {"query": "open the competitor's homepage in a browser and screenshot the whole page for me", "should_trigger": false},
+  {"query": "use the thinkrun CLI to click the Save button on the attached tab and print the console", "should_trigger": false},
+  {"query": "using the ThinkRun MCP tools, navigate to localhost:3000 and take a screenshot", "should_trigger": false},
+  {"query": "write a Playwright E2E test that covers the coupon validation flow", "should_trigger": false},
+  {"query": "add Jest unit tests for the validateCoupon helper in src/lib/coupons.ts", "should_trigger": false}
+]
