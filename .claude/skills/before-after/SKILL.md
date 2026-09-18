@@ -34,7 +34,8 @@ thinkrun doctor
 ```
 
 Local mode for anything behind login or on localhost; cloud mode for public
-URLs with no display (cloud browsers cannot reach your `localhost`).
+URLs with no display (cloud browsers cannot reach your `localhost`). (Cloud path: command surface verified against CLI 0.1.37; not smoke-tested
+when this skill shipped — a session-provisioning incident on 2026-09-18.)
 
 ```bash
 # local — open your OWN window. A capture needs the tab visible; on a shared
