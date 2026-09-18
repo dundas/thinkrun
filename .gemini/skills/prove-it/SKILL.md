@@ -188,7 +188,7 @@ a sentence.
 the Activity Feed. The page for it is owner-only; a reviewer needs a **share**:
 
 ```bash
-CFG=$(thinkrun config show | sed -n 's/^Config file: //p')
+CFG=$(thinkrun config show | sed -n 's/^Config file: //p'); CFG=${CFG:-$HOME/.config/thinkrun/config.json}
 API=$(jq -r .apiUrl "$CFG"); KEY=$(jq -r .apiKey "$CFG")   # read once, used once, never echoed
 SID=$(jq -r .sessionId ~/.thinkrun/local-session-$TAB_ID.json)     # local mode
 # cloud mode: SID=$(thinkrun cloud start --json | jq -r .data.sessionId), or `thinkrun cloud status --json`
