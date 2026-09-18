@@ -37,8 +37,11 @@ Local mode for anything behind login or on localhost; cloud mode for public
 URLs with no display (cloud browsers cannot reach your `localhost`).
 
 ```bash
-# local
-thinkrun tabs; TAB_ID=<clean tab>; thinkrun attach $TAB_ID; T="--tab $TAB_ID"
+# local — open your OWN window. A capture needs the tab visible; on a shared
+# machine another agent's window can be in front, and Chrome returns
+# "image readback failed" for a hidden tab.
+TAB_ID=$(thinkrun new-window "about:blank" --json | jq -er .data.tabId) || exit 1; T="--tab $TAB_ID"
+thinkrun evaluate 'document.visibilityState' $T      # must be "visible" before each capture
 # cloud
 SID=$(thinkrun cloud start --json | jq -er .data.sessionId) || exit 1; T="--mode cloud"
 trap 'thinkrun cloud stop >/dev/null 2>&1' EXIT
@@ -82,6 +85,13 @@ thinkrun screenshot --output .artifacts/$TASK/after.png --selector "<css>" --max
 Look at both with the Read tool before writing anything. If they are
 identical, the change has no visible surface here — say that instead of
 posting two identical images.
+
+**Check the capture honoured the flags.** `--selector` and `--max-dimension`
+are applied by the extension; an older installed extension (one that does
+not report its version in `thinkrun doctor`) returns the full viewport
+regardless. If both images came back full-size, crop both with the *same*
+box locally (`sips -c H W --cropOffset Y X`, or ImageMagick `-crop`) and say
+so in the caption. Never crop one and not the other.
 
 ---
 
