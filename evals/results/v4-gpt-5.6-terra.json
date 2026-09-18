@@ -1,0 +1,37 @@
+{
+ "config": "v4-gpt-5.6-terra",
+ "overall": "120/120",
+ "pct": 100,
+ "perFixture": {
+  "before-after": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "prove-it": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "thinkbrowse-cli": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "thinkbrowse-mcp": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "ux-audit": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "web-browse": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  }
+ }
+}
