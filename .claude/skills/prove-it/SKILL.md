@@ -56,18 +56,22 @@ TAB_ID=<a clean tab from the list>
 thinkrun attach $TAB_ID --audit      # --audit: best-effort screenshot after each state change
 ```
 
-**Pin the tab on every command: `--tab $TAB_ID`.** The CLI's "active tab" is
-machine-wide state; another agent or terminal attaching a different tab moves
-it under you, and your captures land in a different session than the one you
-share. `--tab` makes each command explicit.
+**Pin the target on every command.** The CLI's "active tab" is machine-wide
+state; another agent or terminal attaching a different tab moves it under
+you, and your captures land in a different session than the one you share.
+Set one variable and use it everywhere below:
+
+```bash
+T="--tab $TAB_ID"      # local mode
+```
 
 **Cloud mode** — no display, no extension, or a public URL. (Command surface
 verified against CLI 0.1.37; the end-to-end cloud path was not smoke-tested
 when this skill shipped — a session-provisioning incident on 2026-09-18.)
 
 ```bash
-thinkrun cloud start                 # needs an accepted API key
-# every command below takes --mode cloud, or runs against the active cloud session
+SID=$(thinkrun cloud start --json | jq -r .data.sessionId)   # needs an accepted API key
+T="--mode cloud"        # cloud mode: no --tab; commands run against the active cloud session
 ```
 
 If the target is on localhost, confirm the port answers *your* process before
@@ -92,10 +96,19 @@ If a target is a bug fix, capture the failure **before** applying the fix. It is
 the cheapest moment to prove the bug existed, and the after-shot means nothing
 without it.
 
+The before capture must come from the **pre-fix build**: the base branch
+checked out and running, the previous deployment URL, or `git stash` of the
+fix. Capturing the current (fixed) build and calling it "before" is
+mislabelled evidence. If no pre-fix build is reachable, write
+`before: unavailable` in the report — do not fabricate one.
+
 ```bash
-thinkrun navigate "$URL"; sleep 2
-thinkrun screenshot --output .artifacts/$TASK/before-01-<target-slug>.png --caption "before: <target>"
-thinkrun console --json > .artifacts/$TASK/before-01-console.json
+# on the pre-fix build:
+thinkrun clear-logs $T
+thinkrun navigate "$URL" $T; sleep 2
+thinkrun screenshot --output .artifacts/$TASK/before-01-<target-slug>.png --caption "before: <target>" $T
+thinkrun console --json $T | jq '.data.logs' > .artifacts/$TASK/before-01-console.json
+thinkrun network --json $T | jq '.data.requests' > .artifacts/$TASK/before-01-network.json
 ```
 
 ---
@@ -106,27 +119,30 @@ For each target, in order:
 
 1. Navigate to the starting state (logged in, right page). Setup is not evidence
    unless setup is the target.
-2. Perform the interaction: `thinkrun click`, `fill`, `type`, `press`, `select`,
-   `scroll`, `wait-for-text`.
-3. Capture — this is the evidence, not the audit-mode screenshot:
+2. **Bound the window:** `thinkrun clear-logs $T` — console and network
+   buffers are cumulative; without this, an earlier target's error or request
+   gets attributed to this one.
+3. Perform the interaction: `thinkrun click`, `fill`, `type`, `press`, `select`,
+   `scroll`, `wait-for-text` — each with `$T`.
+4. Capture — this is the evidence, not the audit-mode screenshot:
    ```bash
    N=01; SLUG=<target-slug>
-   thinkrun screenshot --output .artifacts/$TASK/$N-$SLUG.png --caption "$N $SLUG" --tab $TAB_ID
-   thinkrun console --json --tab $TAB_ID | jq '.data.logs' > .artifacts/$TASK/$N-$SLUG-console.json
-   thinkrun network --json --tab $TAB_ID | jq '.data.requests' > .artifacts/$TASK/$N-$SLUG-network.json
-   # console entries are {level, message, args, timestamp}; requests are {url, method, status, duration}
+   thinkrun screenshot --output .artifacts/$TASK/$N-$SLUG.png --caption "$N $SLUG" $T
+   thinkrun console --json $T | jq '.data.logs' > .artifacts/$TASK/$N-$SLUG-console.json
+   thinkrun network --json $T | jq '.data.requests' > .artifacts/$TASK/$N-$SLUG-network.json
+   # console entries are {level, message, args, timestamp}; requests are {url, method, status, duration, startTime, endTime}
    jq '[.[] | select(.level=="error") | .message]' .artifacts/$TASK/$N-$SLUG-console.json
    ```
    `--caption` is what syncs a local screenshot into the Activity Feed session
    (as a screenshot action); without it the file is local only.
-4. Look at the screenshot with the Read tool. Check the console for errors and
-   the network list for failed or slow requests *in the window of this
-   interaction*.
-5. If `click` returns `"category": "no_op_click"`, the click did not change
+5. Look at the screenshot with the Read tool. Check the console for errors and
+   the network list for failed or slow requests — after step 2, everything in
+   the buffers belongs to this target.
+6. If `click` returns `"category": "no_op_click"`, the click did not change
    page state. That is evidence. Record it against the target; do not reach
    for `thinkrun evaluate` to call the handler directly and then call the
    button "working".
-6. Record the verdict and the reason:
+7. Record the verdict and the reason:
    - `pass` — the statement holds and the capture shows it.
    - `fail` — the statement does not hold. Say what happened instead.
    - `not-exercised` — you could not reach the state (blocked login, missing
@@ -143,10 +159,10 @@ of a terminal.
 
 ```bash
 # page-load / request timing from the real browser (ms)
-thinkrun navigate "$URL"; sleep 2
-thinkrun network --json | jq '[.data.requests[] | {url, status, ms: .duration}] | sort_by(-.ms)[:5]'
+thinkrun clear-logs $T; thinkrun navigate "$URL" $T; sleep 2
+thinkrun network --json $T | jq '[.data.requests[] | {url, status, ms: .duration}] | sort_by(-.ms)[:5]'
 # a value from the page
-thinkrun evaluate "document.querySelectorAll('table tbody tr').length"
+thinkrun evaluate "document.querySelectorAll('table tbody tr').length" $T
 ```
 
 Record the measured value and the threshold: `615 ms → 61 ms (target < 300 ms)`.
@@ -176,8 +192,9 @@ CFG=$(thinkrun config show | sed -n 's/^Config file: //p')
 API=$(jq -r .apiUrl "$CFG"); KEY=$(jq -r .apiKey "$CFG")   # read once, used once, never echoed
 SID=$(jq -r .sessionId ~/.thinkrun/local-session-$TAB_ID.json)     # local mode
 # cloud mode: SID=$(thinkrun cloud start --json | jq -r .data.sessionId), or `thinkrun cloud status --json`
-TOKEN=$(curl -s -X POST "$API/api/share" -H "x-api-key: $KEY" -H 'content-type: application/json' \
-  -d "{\"sourceType\":\"session\",\"sourceId\":\"$SID\"}" | jq -r .token)
+# the key goes to curl via a config on stdin, never as an argument (argv is visible to `ps`)
+TOKEN=$(printf 'header = "x-api-key: %s"\n' "$KEY" | curl -s -K - -X POST "$API/api/share" \
+  -H 'content-type: application/json' -d "{\"sourceType\":\"session\",\"sourceId\":\"$SID\"}" | jq -r .token)
 echo "session: https://thinkrun.ai/s/$TOKEN"
 ```
 
@@ -186,13 +203,13 @@ evidence if it contains your steps:
 
 ```bash
 curl -s "$API/api/share/$TOKEN/meta" | jq '[.data.actions[] | select(.type=="screenshot") | .details.caption]'
-# expect your "01 …", "02 …" captions here; if they are missing, you shared the wrong session
+# (public endpoint, no key needed) expect your "01 …", "02 …" captions; if missing, you shared the wrong session
 ```
 
-**Key handling.** `$KEY` is the user's durable API key. It exists for that
-one `curl`. Do not print it, do not put it in the report, the PR, or a log
-line. If the harness records shell output, prefer a short-lived key for this
-step.
+**Key handling.** `$KEY` is the user's durable API key. It is read once, sent
+to `curl` on stdin (never in argv), and used for that one request. Do not
+print it, do not put it in the report, the PR, or a log line. If the harness
+records shell output, prefer a short-lived key for this step.
 
 Write exactly one of: `session: https://thinkrun.ai/s/<token>` or
 `session: none (no API key)`. Never paste `/sessions/<id>` — it is a login wall.
@@ -228,7 +245,7 @@ API key and therefore no share, say so in the comment and leave the PNGs in
 `.artifacts/$TASK/` for the human to drag into the PR. Never upload evidence to
 a third-party paste host.
 
-Clean up: `thinkrun audit off` (local) or `thinkrun cloud stop` (cloud).
+Clean up: `thinkrun audit off $T` (local) or `thinkrun cloud stop` (cloud).
 
 ---
 
