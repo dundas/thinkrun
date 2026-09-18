@@ -167,12 +167,17 @@ Performance, API, and CLI claims get numbers or output pairs, not screenshots
 of a terminal.
 
 ```bash
-# page-load / request timing from the real browser (ms)
+# page load (ms) — the navigation entry, not an individual request
 thinkrun clear-logs $T; thinkrun navigate "$URL" $T; sleep 2
-thinkrun network --json $T | jq '[.data.requests[] | {url, status, ms: .duration}] | sort_by(-.ms)[:5]'
+thinkrun evaluate "Math.round(performance.getEntriesByType('navigation')[0].duration)" $T
+# a specific request's duration (ms) — only when the target names that request
+thinkrun network --json $T | jq '[.data.requests[] | select(.url|test("/api/dashboard")) | {url, status, ms: .duration}]'
 # a value from the page
 thinkrun evaluate "document.querySelectorAll('table tbody tr').length" $T
 ```
+
+State which of these the target means. "Loads in < 300 ms" is the navigation
+entry; "the dashboard request returns in < 300 ms" is that request's duration.
 
 Record the measured value and the threshold: `615 ms → 61 ms (target < 300 ms)`.
 For a perf fix the before measurement comes from Step 1.
@@ -221,9 +226,9 @@ API=$(jq -r .apiUrl "$CFG"); KEY=$(jq -r .apiKey "$CFG")   # read once, used onc
 # never start a new cloud session here — it would be empty
 # the key goes to curl via a config on stdin, never as an argument (argv is visible to `ps`)
 PW=$(openssl rand -base64 12)     # goes to the user, never into the report
-TOKEN=$(printf 'header = "x-api-key: %s"\n' "$KEY" | curl -s -K - -X POST "$API/api/share" \
-  -H 'content-type: application/json' \
-  -d "{\"sourceType\":\"session\",\"sourceId\":\"$SID\",\"password\":\"$PW\",\"includeConsoleLogs\":false,\"includeNetworkRequests\":false}" | jq -r .token)
+# key AND body go to curl through the stdin config — neither appears in argv
+TOKEN=$(printf 'header = "x-api-key: %s"\nheader = "content-type: application/json"\ndata = "{\\"sourceType\\":\\"session\\",\\"sourceId\\":\\"%s\\",\\"password\\":\\"%s\\",\\"includeConsoleLogs\\":false,\\"includeNetworkRequests\\":false}"\n' "$KEY" "$SID" "$PW" \
+  | curl -s -K - -X POST "$API/api/share" | jq -r .token)
 echo "session: https://thinkrun.ai/s/$TOKEN (password-protected; password given to the user separately)"
 ```
 
