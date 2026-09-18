@@ -22,7 +22,7 @@
 //      equals its directory, and whose `description` is non-empty and <= 1024 chars
 
 import { readdirSync, readFileSync, lstatSync, mkdirSync, writeFileSync, existsSync } from "node:fs";
-import { join, relative, dirname, resolve } from "node:path";
+import { join, relative, dirname, resolve, sep } from "node:path";
 
 export const CANONICAL = ".claude";
 export const MIRRORS = [".cursor", ".codex", ".gemini"];
@@ -33,7 +33,15 @@ export const DESCRIPTION_MAX = 1024;
 type Violation = string;
 
 // The single symlink rule. Returns the first path component, from `root`
-// down to `path` inclusive, that is a symlink — or null. Only components that
+// down to `path` inclusive, that is a symlink — or null.
+//
+// Scope, stated plainly: this protects a developer from an accidental link in
+// their own checkout (a stray `.cursor -> ../elsewhere`, a dangling mirror
+// file). It is a check-then-act sequence, so it is NOT a defence against a
+// concurrent process swapping a directory for a link between the check and
+// the write. Anyone who can race a filesystem you are writing to already
+// owns it; this script makes no security claim beyond "it will not follow a
+// link it can see". Only components that
 // exist are inspected (a not-yet-created file has no link to be). Every read
 // root and every write destination in this script goes through this, so a
 // harness directory, a skills directory, a file, or a dangling link at any
@@ -42,7 +50,7 @@ function symlinkInPath(root: string, path: string): string | null {
   const rel = relative(root, path);
   if (rel === "" || rel.startsWith("..")) return null;
   let cur = root;
-  for (const part of rel.split("/")) {
+  for (const part of rel.split(sep)) {
     cur = join(cur, part);
     if (!existsSync(cur) && !isSymlink(cur)) return null; // nothing further exists
     if (isSymlink(cur)) return relative(root, cur);
