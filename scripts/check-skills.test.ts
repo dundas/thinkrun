@@ -2,7 +2,7 @@ import { test, expect, beforeEach, afterEach } from "bun:test";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync, existsSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { check, checkFixture, checkSkill, parseFrontmatter, CANONICAL, MIRRORS, FIXTURE_SIZE, REPO_ROOT } from "./check-skills";
+import { check, checkLinks, checkFixture, checkSkill, parseFrontmatter, CANONICAL, MIRRORS, FIXTURE_SIZE, REPO_ROOT } from "./check-skills";
 import { cpSync } from "node:fs";
 
 let root: string;
@@ -81,6 +81,27 @@ test("a symlinked intermediate directory (evals/) is never read through", () => 
   } finally {
     rmSync(outside, { recursive: true, force: true });
   }
+});
+
+test("checkLinks (the pre-sync gate) names a symlinked harness dir, skills dir, or entry, and passes a clean tree", () => {
+  expect(checkLinks(root)).toEqual([]);
+  rmSync(join(root, ".cursor"), { recursive: true });
+  symlinkSync(join(root, CANONICAL), join(root, ".cursor"));
+  expect(checkLinks(root)).toEqual([".cursor: symlink (harness and skills directories must be real directories)"]);
+  rmSync(join(root, ".cursor"));
+  copyMirrors(root);
+  symlinkSync("/nonexistent", join(root, ".codex/skills/alpha/link"));
+  expect(checkLinks(root)).toEqual([".codex/skills/alpha/link: symlink (not allowed in the skill tree)"]);
+});
+
+test("CLI --links-only exits 1 on a link and 0 on a clean tree", async () => {
+  let proc = Bun.spawn(["bun", join(import.meta.dir, "check-skills.ts"), "--links-only", "--root", root], { stdout: "pipe", stderr: "pipe" });
+  expect(await proc.exited).toBe(0);
+  rmSync(join(root, ".gemini"), { recursive: true });
+  symlinkSync(join(root, CANONICAL), join(root, ".gemini"));
+  proc = Bun.spawn(["bun", join(import.meta.dir, "check-skills.ts"), "--links-only", "--root", root], { stdout: "pipe", stderr: "pipe" });
+  expect(await proc.exited).toBe(1);
+  expect(await new Response(proc.stderr).text()).toContain(".gemini: symlink");
 });
 
 test("a directory in place of an expected file is a violation, not a crash", () => {

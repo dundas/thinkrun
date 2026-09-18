@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "check": "bun scripts/check-skills.ts",
-    "sync": "for m in .cursor .codex .gemini; do rm -rf \"$m/skills\" && cp -R .claude/skills \"$m/skills\"; done && bun scripts/check-skills.ts",
+    "sync": "bun scripts/check-skills.ts --links-only && for m in .cursor .codex .gemini; do rm -rf \"$m/skills\" && cp -R .claude/skills \"$m/skills\"; done && bun scripts/check-skills.ts",
     "test": "bun test scripts/"
   }
 }

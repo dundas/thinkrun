@@ -8,6 +8,10 @@
 // Usage:
 //   bun scripts/check-skills.ts                validate this checkout; exit 1 on any violation
 //   bun scripts/check-skills.ts --root <dir>   validate another tree (tests)
+//   bun scripts/check-skills.ts --links-only   report only symlinks in or leading to
+//                                              the skill trees; `bun run sync` runs
+//                                              this before its rm -rf / cp -R so the
+//                                              copy never goes through a link
 //
 // The check enforces:
 //   1. every mirror equals .claude/skills (both directions, byte compare)
@@ -220,6 +224,24 @@ export function checkSkill(dirName: string, path: string, raw: string): Violatio
   return v;
 }
 
+// Symlink-only pass: every harness root, every skills dir, and every entry
+// beneath them, through the same symlinkInPath / walk rule as the full check.
+export function checkLinks(root: string): Violation[] {
+  const v: Violation[] = [];
+  for (const harness of [CANONICAL, ...MIRRORS]) {
+    const skills = join(root, harness, "skills");
+    const rootLink = symlinkInPath(root, skills);
+    if (rootLink) {
+      v.push(`${rootLink}: symlink (harness and skills directories must be real directories)`);
+      continue;
+    }
+    const links: string[] = [];
+    walk(skills, skills, links);
+    for (const l of links) v.push(`${harness}/skills/${l}: symlink (not allowed in the skill tree)`);
+  }
+  return v;
+}
+
 export function check(root: string): Violation[] {
   const v: Violation[] = [];
   const canonLink = symlinkInPath(root, join(root, CANONICAL, "skills"));
@@ -258,11 +280,12 @@ if (import.meta.main) {
     }
     root = resolve(value);
   }
-  const violations = check(root);
+  const violations = args.includes("--links-only") ? checkLinks(root) : check(root);
   if (violations.length) {
     console.error(`skills-check: ${violations.length} violation(s)`);
     for (const line of violations) console.error(`  - ${line}`);
     process.exit(1);
   }
-  console.log(`skills-check: ok (${skillDirs(root).length} skills, ${MIRRORS.length} mirrors)`);
+  if (args.includes("--links-only")) console.log("skills-check: no symlinks in or leading to the skill trees");
+  else console.log(`skills-check: ok (${skillDirs(root).length} skills, ${MIRRORS.length} mirrors)`);
 }
