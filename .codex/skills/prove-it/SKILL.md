@@ -63,6 +63,7 @@ Set one variable and use it everywhere below:
 
 ```bash
 T="--tab $TAB_ID"      # local mode
+trap 'thinkrun audit off --tab '"$TAB_ID"' >/dev/null 2>&1' EXIT   # audit mode never outlives this run, even on abort
 ```
 
 **Cloud mode** — no display, no extension, or a public URL. The cloud browser
@@ -72,8 +73,9 @@ verified against CLI 0.1.37; the end-to-end cloud path was not smoke-tested
 when this skill shipped — a session-provisioning incident on 2026-09-18.)
 
 ```bash
-SID=$(thinkrun cloud start --json | jq -r .data.sessionId)   # needs an accepted API key
+SID=$(thinkrun cloud start --json | jq -er .data.sessionId) || { echo "cloud start failed"; exit 1; }   # needs an accepted API key
 T="--mode cloud"        # cloud mode: no --tab; commands run against the active cloud session
+trap 'thinkrun cloud stop >/dev/null 2>&1' EXIT   # the cloud session never outlives this run, even on abort
 # the active cloud session is also machine-wide state (`cloud use`, another `cloud start`).
 # There is no per-command session flag, so assert it before every target's captures:
 same_session() { [ "$(thinkrun cloud status --json | jq -r .data.sessionId)" = "$SID" ] || { echo "active cloud session changed; stop"; exit 1; }; }
@@ -230,8 +232,8 @@ API=$(jq -r .apiUrl "$CFG"); KEY=$(jq -r .apiKey "$CFG")   # read once, used onc
 PW=$(openssl rand -base64 12)     # goes to the user, never into the report
 # key AND body go to curl through the stdin config — neither appears in argv
 TOKEN=$(printf 'header = "x-api-key: %s"\nheader = "content-type: application/json"\ndata = "{\\"sourceType\\":\\"session\\",\\"sourceId\\":\\"%s\\",\\"password\\":\\"%s\\",\\"includeConsoleLogs\\":false,\\"includeNetworkRequests\\":false}"\n' "$KEY" "$SID" "$PW" \
-  | curl -s -K - -X POST "$API/api/share" | jq -r .token)
-echo "session: https://thinkrun.ai/s/$TOKEN (password-protected; password given to the user separately)"
+  | curl -sf -K - -X POST "$API/api/share" | jq -er '.token // empty') || { echo "share creation failed — report 'session: not shared', do not post a link"; TOKEN=""; }
+[ -n "$TOKEN" ] && echo "session: https://thinkrun.ai/s/$TOKEN (password-protected; password given to the user separately)"
 ```
 
 Before pasting the link, confirm your captures are in it — the share is only
