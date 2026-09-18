@@ -62,6 +62,18 @@ test("(ii) extra file in a mirror fails", () => {
   expect(v[0]).toContain("extra file");
 });
 
+test("extra or missing directory in a mirror fails, even when empty", () => {
+  mkdirSync(join(root, ".gemini/skills/alpha/stray-dir"));
+  let v = check(root);
+  expect(v).toEqual([".gemini/skills/alpha/stray-dir/: extra directory (not in .claude)"]);
+  rmSync(join(root, ".gemini/skills/alpha/stray-dir"), { recursive: true });
+  mkdirSync(join(root, CANONICAL, "skills/alpha/references"));
+  v = check(root);
+  expect(v).toEqual(MIRRORS.map((m) => `${m}/skills/alpha/references/: missing directory (present in .claude)`));
+  sync(root);
+  expect(check(root)).toEqual([]);
+});
+
 test("missing file in a mirror fails", () => {
   rmSync(join(root, ".cursor/skills/beta-two/evals/trigger-eval.json"));
   const v = check(root);

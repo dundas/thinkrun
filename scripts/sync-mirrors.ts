@@ -39,6 +39,19 @@ function walk(dir: string, base = dir): string[] {
   return out;
 }
 
+function walkDirs(dir: string, base = dir): string[] {
+  if (!existsSync(dir)) return [];
+  const out: string[] = [];
+  for (const entry of readdirSync(dir).sort()) {
+    const full = join(dir, entry);
+    if (statSync(full).isDirectory()) {
+      out.push(relative(base, full));
+      out.push(...walkDirs(full, base));
+    }
+  }
+  return out;
+}
+
 function skillDirs(root: string): string[] {
   const dir = join(root, CANONICAL, "skills");
   if (!existsSync(dir)) return [];
@@ -67,6 +80,12 @@ export function checkMirrors(root: string): Violation[] {
     for (const f of mirrorFiles) {
       if (!existsSync(join(canonDir, f))) v.push(`${mirror}/skills/${f}: extra file (not in ${CANONICAL})`);
     }
+    // Directories too: git can't carry an empty directory, but a local tree can,
+    // and "identical in both directions" should mean the tree, not just the files.
+    const canonDirs = new Set(walkDirs(canonDir));
+    const mirrorDirs = new Set(walkDirs(mirrorDir));
+    for (const d of canonDirs) if (!mirrorDirs.has(d)) v.push(`${mirror}/skills/${d}/: missing directory (present in ${CANONICAL})`);
+    for (const d of mirrorDirs) if (!canonDirs.has(d)) v.push(`${mirror}/skills/${d}/: extra directory (not in ${CANONICAL})`);
   }
   return v;
 }
@@ -162,6 +181,7 @@ export function sync(root: string): string[] {
   for (const mirror of MIRRORS) {
     const mirrorDir = join(root, mirror, "skills");
     rmSync(mirrorDir, { recursive: true, force: true });
+    for (const d of walkDirs(canonDir)) mkdirSync(join(mirrorDir, d), { recursive: true });
     for (const f of walk(canonDir)) {
       const target = join(mirrorDir, f);
       mkdirSync(dirname(target), { recursive: true });
