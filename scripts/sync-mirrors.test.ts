@@ -98,6 +98,20 @@ test("a dangling symlink at a mirror file destination is refused by sync, not wr
   }
 });
 
+test("a symlinked intermediate directory (evals/) is never read through", () => {
+  const outside = mkdtempSync(join(tmpdir(), "outside-"));
+  try {
+    writeFileSync(join(outside, "trigger-eval.json"), fixture());
+    rmSync(join(root, CANONICAL, "skills/alpha/evals"), { recursive: true });
+    symlinkSync(outside, join(root, CANONICAL, "skills/alpha/evals"));
+    const v = check(root);
+    expect(v).toContain(".claude/skills/alpha/evals/trigger-eval.json: missing or not a regular file");
+    expect(v).toContain(".claude/skills/alpha/evals: symlink (not allowed in the skill tree)");
+  } finally {
+    rmSync(outside, { recursive: true, force: true });
+  }
+});
+
 test("a directory in place of an expected file is a violation, not a crash", () => {
   rmSync(join(root, ".cursor/skills/alpha/SKILL.md"));
   mkdirSync(join(root, ".cursor/skills/alpha/SKILL.md"));

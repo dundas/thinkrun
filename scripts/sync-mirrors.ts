@@ -105,7 +105,8 @@ function skillDirs(root: string): string[] {
 
 // Read a regular file, or return null for anything else (directory, socket…)
 // so the caller reports a violation instead of throwing EISDIR.
-function readRegular(path: string): Buffer | null {
+function readRegular(root: string, path: string): Buffer | null {
+  if (symlinkInPath(root, path)) return null; // never read through a link at any level
   if (!existsSync(path)) return null;
   const st = lstatSync(path);
   return st.isFile() ? readFileSync(path) : null;
@@ -135,12 +136,14 @@ export function checkMirrors(root: string): Violation[] {
         v.push(`${mirror}/skills/${f}: missing (present in ${CANONICAL})`);
         continue;
       }
-      const mirrorBytes = readRegular(target);
+      const mirrorBytes = readRegular(root, target);
       if (mirrorBytes === null) {
         v.push(`${mirror}/skills/${f}: expected a regular file`);
         continue;
       }
-      if (!readFileSync(join(canonDir, f)).equals(mirrorBytes)) {
+      const canonBytes = readRegular(root, join(canonDir, f));
+      if (canonBytes === null) continue; // already reported as a symlink / non-file on the canonical side
+      if (!canonBytes.equals(mirrorBytes)) {
         v.push(`${mirror}/skills/${f}: differs from ${CANONICAL}/skills/${f}`);
       }
     }
@@ -235,11 +238,11 @@ export function check(root: string): Violation[] {
   for (const skill of skills) {
     const dir = join(root, CANONICAL, "skills", skill);
     const skillMd = join(dir, "SKILL.md");
-    const skillBytes = readRegular(skillMd);
+    const skillBytes = readRegular(root, skillMd);
     if (skillBytes === null) v.push(`${CANONICAL}/skills/${skill}/SKILL.md: missing or not a regular file`);
     else v.push(...checkSkill(skill, `${CANONICAL}/skills/${skill}/SKILL.md`, skillBytes.toString("utf8")));
     const fixture = join(dir, "evals", "trigger-eval.json");
-    const fixtureBytes = readRegular(fixture);
+    const fixtureBytes = readRegular(root, fixture);
     if (fixtureBytes === null) v.push(`${CANONICAL}/skills/${skill}/evals/trigger-eval.json: missing or not a regular file`);
     else v.push(...checkFixture(`${CANONICAL}/skills/${skill}/evals/trigger-eval.json`, fixtureBytes.toString("utf8")));
   }
