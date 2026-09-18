@@ -149,6 +149,15 @@ test("malformed frontmatter is a violation, not a pass", () => {
   expect(checkSkill("alpha", "p", "---\n- a\n- b\n---\n")).toEqual(["p: missing or malformed YAML frontmatter (must open and close with --- on its own line)"]);
 });
 
+test("CLI sync mode refuses --root entirely, so it can only write inside this checkout", async () => {
+  const stray = join(root, ".cursor/skills/alpha/SKILL.md");
+  const before = readFileSync(stray, "utf8");
+  const proc = Bun.spawn(["bun", join(import.meta.dir, "sync-mirrors.ts"), "--root", root], { cwd: root, stdout: "pipe", stderr: "pipe" });
+  expect(await proc.exited).toBe(2);
+  expect(await new Response(proc.stderr).text()).toContain("--root is only valid with --check");
+  expect(readFileSync(stray, "utf8")).toBe(before);
+});
+
 test("CLI rejects a bare --root instead of resolving it to cwd", async () => {
   for (const argv of [["--check", "--root"], ["--root", "--check"]]) {
     const proc = Bun.spawn(["bun", join(import.meta.dir, "sync-mirrors.ts"), ...argv], { cwd: root, stdout: "pipe", stderr: "pipe" });

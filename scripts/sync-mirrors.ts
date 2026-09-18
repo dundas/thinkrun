@@ -7,8 +7,10 @@
 // Usage:
 //   bun scripts/sync-mirrors.ts                regenerate the mirrors from .claude
 //   bun scripts/sync-mirrors.ts --check        validate; exit 1 on any violation
-//   ... --root <dir>                           operate on another tree (tests); the
-//                                              default is this checkout, never cwd
+//   bun scripts/sync-mirrors.ts --check --root <dir>
+//                                              validate another tree (tests only).
+//                                              sync mode has no --root: it only ever
+//                                              writes inside this checkout
 //
 // --check enforces:
 //   1. every mirror equals .claude/skills (both directions, byte compare)
@@ -210,18 +212,24 @@ export const REPO_ROOT = resolve(import.meta.dir, "..");
 
 if (import.meta.main) {
   const args = process.argv.slice(2);
+  const mode = args.includes("--check") ? "check" : "sync";
   const rootIdx = args.indexOf("--root");
   let root = REPO_ROOT;
   if (rootIdx !== -1) {
+    // --root is read-only by construction: it is accepted with --check only.
+    // sync deletes and rewrites mirror directories, so it never takes a root
+    // argument — the only tree it can touch is the checkout this file lives in.
+    if (mode !== "check") {
+      console.error("sync-mirrors: --root is only valid with --check (sync never writes outside this checkout)");
+      process.exit(2);
+    }
     const value = args[rootIdx + 1];
-    // A bare --root would resolve to cwd, and sync mode deletes mirror dirs there.
     if (!value || value.startsWith("-")) {
       console.error("sync-mirrors: --root requires a directory argument");
       process.exit(2);
     }
     root = resolve(value);
   }
-  const mode = args.includes("--check") ? "check" : "sync";
   if (mode === "check") {
     const violations = check(root);
     if (violations.length) {
