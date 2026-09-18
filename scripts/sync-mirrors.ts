@@ -101,28 +101,23 @@ export function checkFixture(path: string, raw: string): Violation[] {
 }
 
 export function parseFrontmatter(raw: string): Record<string, string> | null {
+  // Exact delimiters: the document must open with "---" on its own line and
+  // the block must close with "---" on its own line (not "---anything").
   if (!raw.startsWith("---\n")) return null;
-  const end = raw.indexOf("\n---", 4);
-  if (end === -1) return null;
-  const block = raw.slice(4, end);
+  const close = raw.slice(4).match(/^---[ \t]*$/m);
+  if (!close || close.index === undefined) return null;
+  const block = raw.slice(4, 4 + close.index);
+  let doc: unknown;
+  try {
+    doc = Bun.YAML.parse(block);
+  } catch {
+    return null; // malformed YAML (unterminated quote, bad indentation) is a violation, not a pass
+  }
+  if (doc === null || typeof doc !== "object" || Array.isArray(doc)) return null;
   const out: Record<string, string> = {};
-  const lines = block.split("\n");
-  for (let i = 0; i < lines.length; i++) {
-    const m = lines[i].match(/^([A-Za-z_][\w-]*):\s*(.*)$/);
-    if (!m) continue;
-    let val = m[2].trim();
-    // YAML block scalar (`>` folded / `|` literal): gather the indented lines
-    if (/^[>|][+-]?$/.test(val)) {
-      const parts: string[] = [];
-      while (i + 1 < lines.length && (/^\s+\S/.test(lines[i + 1]) || lines[i + 1].trim() === "")) {
-        parts.push(lines[++i].trim());
-      }
-      out[m[1]] = parts.join(val.startsWith(">") ? " " : "\n").trim();
-      continue;
-    }
-    // frontmatter values may be double-quoted; strip one layer
-    if (val.length >= 2 && val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1).replace(/\\"/g, '"');
-    out[m[1]] = val;
+  for (const [k, v] of Object.entries(doc as Record<string, unknown>)) {
+    if (typeof v === "string") out[k] = v.trim();
+    else if (typeof v === "number" || typeof v === "boolean") out[k] = String(v);
   }
   return out;
 }
@@ -130,7 +125,7 @@ export function parseFrontmatter(raw: string): Record<string, string> | null {
 export function checkSkill(dirName: string, path: string, raw: string): Violation[] {
   const v: Violation[] = [];
   const fm = parseFrontmatter(raw);
-  if (!fm) return [`${path}: missing YAML frontmatter (must start with ---)`];
+  if (!fm) return [`${path}: missing or malformed YAML frontmatter (must open and close with --- on its own line)`];
   if (!fm.name) v.push(`${path}: frontmatter missing name`);
   else {
     if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(fm.name)) v.push(`${path}: name "${fm.name}" is not kebab-case`);
@@ -185,7 +180,16 @@ export const REPO_ROOT = resolve(import.meta.dir, "..");
 if (import.meta.main) {
   const args = process.argv.slice(2);
   const rootIdx = args.indexOf("--root");
-  const root = rootIdx === -1 ? REPO_ROOT : resolve(args[rootIdx + 1] ?? "");
+  let root = REPO_ROOT;
+  if (rootIdx !== -1) {
+    const value = args[rootIdx + 1];
+    // A bare --root would resolve to cwd, and sync mode deletes mirror dirs there.
+    if (!value || value.startsWith("-")) {
+      console.error("sync-mirrors: --root requires a directory argument");
+      process.exit(2);
+    }
+    root = resolve(value);
+  }
   const mode = args.includes("--check") ? "check" : "sync";
   if (mode === "check") {
     const violations = check(root);

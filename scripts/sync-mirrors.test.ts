@@ -109,8 +109,25 @@ test("(vii) name not matching directory fails; non-kebab fails", () => {
   expect(v).toEqual(['p: name "Alpha_1" is not kebab-case']);
 });
 
+test("malformed frontmatter is a violation, not a pass", () => {
+  // unterminated quoted value
+  expect(checkSkill("alpha", "p", '---\nname: alpha\ndescription: "unterminated\n---\n')).toEqual(["p: missing or malformed YAML frontmatter (must open and close with --- on its own line)"]);
+  // closing marker that is not exactly ---
+  expect(checkSkill("alpha", "p", "---\nname: alpha\ndescription: ok\n---invalid\n")).toEqual(["p: missing or malformed YAML frontmatter (must open and close with --- on its own line)"]);
+  // frontmatter that is a list, not a map
+  expect(checkSkill("alpha", "p", "---\n- a\n- b\n---\n")).toEqual(["p: missing or malformed YAML frontmatter (must open and close with --- on its own line)"]);
+});
+
+test("CLI rejects a bare --root instead of resolving it to cwd", async () => {
+  for (const argv of [["--check", "--root"], ["--root", "--check"]]) {
+    const proc = Bun.spawn(["bun", join(import.meta.dir, "sync-mirrors.ts"), ...argv], { cwd: root, stdout: "pipe", stderr: "pipe" });
+    expect(await proc.exited).toBe(2);
+    expect(await new Response(proc.stderr).text()).toContain("--root requires a directory argument");
+  }
+});
+
 test("missing frontmatter / description fails", () => {
-  expect(checkSkill("alpha", "p", "# no frontmatter")).toEqual(["p: missing YAML frontmatter (must start with ---)"]);
+  expect(checkSkill("alpha", "p", "# no frontmatter")).toEqual(["p: missing or malformed YAML frontmatter (must open and close with --- on its own line)"]);
   expect(checkSkill("alpha", "p", "---\nname: alpha\n---\n")).toEqual(["p: frontmatter missing description"]);
 });
 
