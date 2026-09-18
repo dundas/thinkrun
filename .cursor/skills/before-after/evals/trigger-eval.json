@@ -1,0 +1,22 @@
+[
+  {"query": "add before/after screenshots of the settings page to PR #57", "should_trigger": true},
+  {"query": "show me the visual diff of this header change — before and after, side by side", "should_trigger": true},
+  {"query": "the PR needs a before-and-after table for the new empty state", "should_trigger": true},
+  {"query": "capture the pricing card on main and on my branch and put both images in the PR description", "should_trigger": true},
+  {"query": "run the ship step for this UI change: before/after table then post it", "should_trigger": true},
+  {"query": "I have two PNGs from yesterday and today — turn them into a before/after table for the PR", "should_trigger": true},
+  {"query": "screenshot the modal before my fix and after it so the reviewer can see the spacing change", "should_trigger": true},
+  {"query": "compare staging and production homepage screenshots side by side for the release notes", "should_trigger": true},
+  {"query": "before/after of the dashboard chart at the same viewport, element only, for PR #302", "should_trigger": true},
+  {"query": "make a before and after of the onboarding banner and attach it to the pull request", "should_trigger": true},
+  {"query": "prove the coupon field rejects expired codes and attach the evidence to the PR", "should_trigger": false},
+  {"query": "verify the checkout change works end to end and post pass/fail proof to PR #12", "should_trigger": false},
+  {"query": "did the agent actually test the login fix? run the prove step", "should_trigger": false},
+  {"query": "screenshot the pricing page for me", "should_trigger": false},
+  {"query": "open the competitor's homepage and take a full-page screenshot", "should_trigger": false},
+  {"query": "visit these 5 URLs and screenshot each one", "should_trigger": false},
+  {"query": "walk through the new onboarding flow and tell me everything that looks off", "should_trigger": false},
+  {"query": "do a UX review of the dashboard and give me a prioritized fix list", "should_trigger": false},
+  {"query": "the API latency fix — measure before and after response times and put the numbers on the PR", "should_trigger": false},
+  {"query": "write a Playwright visual regression test for the header component", "should_trigger": false}
+]
