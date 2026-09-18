@@ -1,0 +1,10 @@
+{
+  "name": "thinkrun-skills",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "bun scripts/sync-mirrors.ts --check",
+    "sync": "bun scripts/sync-mirrors.ts",
+    "test": "bun test scripts/"
+  }
+}

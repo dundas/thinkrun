@@ -1,0 +1,22 @@
+name: Skills check
+
+# Keeps the four harness skill directories identical and every trigger-eval
+# fixture well-formed. Deterministic — no model calls; the routing benchmark
+# in evals/BENCHMARK.md is run manually and recorded in the PR.
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  skills-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - name: Mirrors + fixtures + frontmatter
+        run: bun run check
+      - name: Unit tests
+        run: bun run test
