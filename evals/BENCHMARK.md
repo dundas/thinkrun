@@ -125,3 +125,26 @@ Three skills can plausibly claim "verify …":
 Applied to the fixtures: `ux-audit` #2 became exploratory ("walk through the new checkout redesign as a first-time buyer and flag everything that looks off"); the confirmatory phrasing moved to `prove-it`; `web-browse` #7 dropped the word "verify" ("load the new blog post live and screenshot it — do the images and code blocks render?"). The descriptions lost "verify something works live" (web-browse) and "verify the feature we shipped" (ux-audit).
 
 Reproduce: `bun evals/run-eval.ts build` → `codex exec --model gpt-5.6-terra --skip-git-repo-check -o out.txt - < evals/prompt.txt` / `claude -p --model <id> --output-format text "$(cat evals/prompt.txt)"` → `bun evals/run-eval.ts grade <config> out.txt`. Raw outputs under `evals/results/raw/`.
+
+# Matrix v4 — 6-skill catalog with `before-after`, 2026-09-18
+
+`before-after` (the ship-step proof table: two captures at the same viewport → `| Before | After |`) joins the catalog. 120 queries.
+
+| Config | Overall | before-after | prove-it | cli | mcp | ux-audit | web-browse |
+|---|---|---|---|---|---|---|---|
+| gpt-5.6-terra | **120/120** | 20 | 20 | 20 | 20 | 20 | 20 |
+| claude-fable-5 | **120/120** | 20 | 20 | 20 | 20 | 20 | 20 |
+| claude-sonnet-5 | 113/120 | 19 | 20 | 20 | 14 | 20 | 20 |
+
+sonnet-5's `before-after` miss (id 8: "compare staging and production homepage screenshots side by side for the release notes" → web-browse) is a strict reading — no change under test is named — and is documented, not tuned. Its MCP misses are the known set.
+
+## Ablation — `no-before-after`
+
+| Config | positives → | negatives → |
+|---|---|---|
+| gpt-5.6-terra | prove-it ×10 | prove-it 4, web-browse 3, ux-audit 2, none 1 |
+| claude-sonnet-5 | none 9, web-browse 1 | prove-it 4, web-browse 3, ux-audit 2, none 1 |
+
+With the skill absent, terra treats a before/after table as part of `prove-it` (which does document `before-*` captures); sonnet mostly routes to `none`. Every negative lands on the sibling it was written to test. No over-capture. The graded score under the absorb map (113/120 terra, 97/120 sonnet) is an artifact of negatives that were deliberately written as prove-it / web-browse near-misses; the routing table is the result.
+
+Reproduce as for v3.

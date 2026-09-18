@@ -1,0 +1,81 @@
+{
+ "variant": "no-before-after",
+ "config": "gpt-5.6-terra",
+ "overall": "113/120",
+ "pct": 94.2,
+ "perFixture": {
+  "before-after": {
+   "pass": 13,
+   "total": 20,
+   "fails": [
+    {
+     "id": 11,
+     "expected": "NOT prove-it|web-browse|before-after",
+     "got": "prove-it",
+     "q": "prove the coupon field rejects expired codes and attach the evidence t"
+    },
+    {
+     "id": 12,
+     "expected": "NOT prove-it|web-browse|before-after",
+     "got": "prove-it",
+     "q": "verify the checkout change works end to end and post pass/fail proof t"
+    },
+    {
+     "id": 13,
+     "expected": "NOT prove-it|web-browse|before-after",
+     "got": "prove-it",
+     "q": "did the agent actually test the login fix? run the prove step"
+    },
+    {
+     "id": 14,
+     "expected": "NOT prove-it|web-browse|before-after",
+     "got": "web-browse",
+     "q": "screenshot the pricing page for me"
+    },
+    {
+     "id": 15,
+     "expected": "NOT prove-it|web-browse|before-after",
+     "got": "web-browse",
+     "q": "open the competitor's homepage and take a full-page screenshot"
+    },
+    {
+     "id": 16,
+     "expected": "NOT prove-it|web-browse|before-after",
+     "got": "web-browse",
+     "q": "visit these 5 URLs and screenshot each one"
+    },
+    {
+     "id": 19,
+     "expected": "NOT prove-it|web-browse|before-after",
+     "got": "prove-it",
+     "q": "the API latency fix — measure before and after response times and put "
+    }
+   ]
+  },
+  "prove-it": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "thinkbrowse-cli": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "thinkbrowse-mcp": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "ux-audit": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "web-browse": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  }
+ }
+}
