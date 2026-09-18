@@ -17,7 +17,7 @@
 //   3. every SKILL.md opens with YAML frontmatter whose `name` is kebab-case and
 //      equals its directory, and whose `description` is non-empty and <= 1024 chars
 
-import { readdirSync, readFileSync, statSync, mkdirSync, writeFileSync, rmSync, existsSync } from "node:fs";
+import { readdirSync, readFileSync, lstatSync, mkdirSync, writeFileSync, rmSync, existsSync } from "node:fs";
 import { join, relative, dirname, resolve } from "node:path";
 
 export const CANONICAL = ".claude";
@@ -28,12 +28,17 @@ export const DESCRIPTION_MAX = 1024;
 
 type Violation = string;
 
-function walk(dir: string, base = dir): string[] {
+// Symlinks are never followed: a mirror made of links to the canonical files
+// would compare equal by content while not being a copy, and a dangling link
+// would crash the read. They are collected and reported as violations.
+function walk(dir: string, base = dir, symlinks: string[] = []): string[] {
   if (!existsSync(dir)) return [];
   const out: string[] = [];
   for (const entry of readdirSync(dir).sort()) {
     const full = join(dir, entry);
-    if (statSync(full).isDirectory()) out.push(...walk(full, base));
+    const st = lstatSync(full);
+    if (st.isSymbolicLink()) symlinks.push(relative(base, full));
+    else if (st.isDirectory()) out.push(...walk(full, base, symlinks));
     else out.push(relative(base, full));
   }
   return out;
@@ -44,7 +49,7 @@ function walkDirs(dir: string, base = dir): string[] {
   const out: string[] = [];
   for (const entry of readdirSync(dir).sort()) {
     const full = join(dir, entry);
-    if (statSync(full).isDirectory()) {
+    if (lstatSync(full).isDirectory()) {
       out.push(relative(base, full));
       out.push(...walkDirs(full, base));
     }
@@ -57,16 +62,20 @@ function skillDirs(root: string): string[] {
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
     .sort()
-    .filter((d) => statSync(join(dir, d)).isDirectory());
+    .filter((d) => lstatSync(join(dir, d)).isDirectory());
 }
 
 export function checkMirrors(root: string): Violation[] {
   const v: Violation[] = [];
   const canonDir = join(root, CANONICAL, "skills");
-  const canonFiles = walk(canonDir);
+  const canonLinks: string[] = [];
+  const canonFiles = walk(canonDir, canonDir, canonLinks);
+  for (const l of canonLinks) v.push(`${CANONICAL}/skills/${l}: symlink (not allowed in the skill tree)`);
   for (const mirror of MIRRORS) {
     const mirrorDir = join(root, mirror, "skills");
-    const mirrorFiles = walk(mirrorDir);
+    const mirrorLinks: string[] = [];
+    const mirrorFiles = walk(mirrorDir, mirrorDir, mirrorLinks);
+    for (const l of mirrorLinks) v.push(`${mirror}/skills/${l}: symlink (mirrors must be copies)`);
     for (const f of canonFiles) {
       const target = join(mirrorDir, f);
       if (!existsSync(target)) {
@@ -122,10 +131,12 @@ export function checkFixture(path: string, raw: string): Violation[] {
 export function parseFrontmatter(raw: string): Record<string, string> | null {
   // Exact delimiters: the document must open with "---" on its own line and
   // the block must close with "---" on its own line (not "---anything").
-  if (!raw.startsWith("---\n")) return null;
-  const close = raw.slice(4).match(/^---[ \t]*$/m);
+  // Accept CRLF checkouts (.gitattributes pins LF, but a local tree may differ).
+  const text = raw.replace(/\r\n/g, "\n");
+  if (!text.startsWith("---\n")) return null;
+  const close = text.slice(4).match(/^---[ \t]*$/m);
   if (!close || close.index === undefined) return null;
-  const block = raw.slice(4, 4 + close.index);
+  const block = text.slice(4, 4 + close.index);
   let doc: unknown;
   try {
     doc = Bun.YAML.parse(block);

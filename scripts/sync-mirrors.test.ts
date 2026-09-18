@@ -1,5 +1,5 @@
 import { test, expect, beforeEach, afterEach } from "bun:test";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync, existsSync } from "node:fs";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync, existsSync, symlinkSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { check, sync, checkFixture, checkSkill, parseFrontmatter, CANONICAL, MIRRORS, FIXTURE_SIZE, REPO_ROOT } from "./sync-mirrors";
@@ -72,6 +72,25 @@ test("extra or missing directory in a mirror fails, even when empty", () => {
   expect(v).toEqual(MIRRORS.map((m) => `${m}/skills/alpha/references/: missing directory (present in .claude)`));
   sync(root);
   expect(check(root)).toEqual([]);
+});
+
+test("CRLF frontmatter parses the same as LF", () => {
+  const crlf = skillMd("alpha").replace(/\n/g, "\r\n");
+  expect(checkSkill("alpha", "p", crlf)).toEqual([]);
+  expect(parseFrontmatter(crlf)?.name).toBe("alpha");
+});
+
+test("symlinks are violations, in mirrors and in the canonical tree, and never followed", () => {
+  rmSync(join(root, ".codex/skills/alpha/SKILL.md"));
+  symlinkSync(join(root, CANONICAL, "skills/alpha/SKILL.md"), join(root, ".codex/skills/alpha/SKILL.md"));
+  let v = check(root);
+  // exactly one violation: the link itself, even though its target's bytes match
+  expect(v).toEqual([".codex/skills/alpha/SKILL.md: symlink (mirrors must be copies)"]);
+  sync(root); // sync replaces the link with a real copy
+  expect(check(root)).toEqual([]);
+  symlinkSync("/nonexistent/target", join(root, CANONICAL, "skills/alpha/dangling"));
+  v = check(root);
+  expect(v).toContain(".claude/skills/alpha/dangling: symlink (not allowed in the skill tree)");
 });
 
 test("missing file in a mirror fails", () => {
