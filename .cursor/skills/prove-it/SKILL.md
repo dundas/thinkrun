@@ -65,7 +65,9 @@ Set one variable and use it everywhere below:
 T="--tab $TAB_ID"      # local mode
 ```
 
-**Cloud mode** — no display, no extension, or a public URL. (Command surface
+**Cloud mode** — no display, no extension, or a public URL. The cloud browser
+cannot reach your machine's `localhost`: a localhost target needs local mode,
+or a tunnel (ngrok, cloudflared) and the tunnel URL as `$URL`. (Command surface
 verified against CLI 0.1.37; the end-to-end cloud path was not smoke-tested
 when this skill shipped — a session-provisioning incident on 2026-09-18.)
 
@@ -77,8 +79,10 @@ T="--mode cloud"        # cloud mode: no --tab; commands run against the active 
 same_session() { [ "$(thinkrun cloud status --json | jq -r .data.sessionId)" = "$SID" ] || { echo "active cloud session changed; stop"; exit 1; }; }
 ```
 
-If the target is on localhost, confirm the port answers *your* process before
-capturing anything — another service may be squatting it:
+If the target is on localhost (local mode only), confirm the port answers
+*your* process before capturing anything — another service may be squatting
+it. In cloud mode, confirm reachability from the cloud browser instead:
+`thinkrun navigate "$URL" $T` and check the returned title.
 
 ```bash
 PORT=<port>; lsof -iTCP:$PORT -sTCP:LISTEN | head -3; curl -sI http://localhost:$PORT | head -1
