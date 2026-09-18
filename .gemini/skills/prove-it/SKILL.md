@@ -56,6 +56,11 @@ TAB_ID=<a clean tab from the list>
 thinkrun attach $TAB_ID --audit      # --audit: best-effort screenshot after each state change
 ```
 
+**Pin the tab on every command: `--tab $TAB_ID`.** The CLI's "active tab" is
+machine-wide state; another agent or terminal attaching a different tab moves
+it under you, and your captures land in a different session than the one you
+share. `--tab` makes each command explicit.
+
 **Cloud mode** — no display, no extension, or a public URL.
 
 ```bash
@@ -104,14 +109,22 @@ For each target, in order:
 3. Capture — this is the evidence, not the audit-mode screenshot:
    ```bash
    N=01; SLUG=<target-slug>
-   thinkrun screenshot --output .artifacts/$TASK/$N-$SLUG.png --caption "$N $SLUG"
-   thinkrun console --json | jq '.data.logs' > .artifacts/$TASK/$N-$SLUG-console.json
-   thinkrun network --json | jq '.data.requests' > .artifacts/$TASK/$N-$SLUG-network.json
+   thinkrun screenshot --output .artifacts/$TASK/$N-$SLUG.png --caption "$N $SLUG" --tab $TAB_ID
+   thinkrun console --json --tab $TAB_ID | jq '.data.logs' > .artifacts/$TASK/$N-$SLUG-console.json
+   thinkrun network --json --tab $TAB_ID | jq '.data.requests' > .artifacts/$TASK/$N-$SLUG-network.json
+   # console entries are {level, message, args, timestamp}; requests are {url, method, status, duration}
+   jq '[.[] | select(.level=="error") | .message]' .artifacts/$TASK/$N-$SLUG-console.json
    ```
+   `--caption` is what syncs a local screenshot into the Activity Feed session
+   (as a screenshot action); without it the file is local only.
 4. Look at the screenshot with the Read tool. Check the console for errors and
    the network list for failed or slow requests *in the window of this
    interaction*.
-5. Record the verdict and the reason:
+5. If `click` returns `"category": "no_op_click"`, the click did not change
+   page state. That is evidence. Record it against the target; do not reach
+   for `thinkrun evaluate` to call the handler directly and then call the
+   button "working".
+6. Record the verdict and the reason:
    - `pass` — the statement holds and the capture shows it.
    - `fail` — the statement does not hold. Say what happened instead.
    - `not-exercised` — you could not reach the state (blocked login, missing
@@ -164,6 +177,14 @@ SID=$(jq -r .sessionId ~/.thinkrun/local-session-$TAB_ID.json)     # local mode
 TOKEN=$(curl -s -X POST "$API/api/share" -H "x-api-key: $KEY" -H 'content-type: application/json' \
   -d "{\"sourceType\":\"session\",\"sourceId\":\"$SID\"}" | jq -r .token)
 echo "session: https://thinkrun.ai/s/$TOKEN"
+```
+
+Before pasting the link, confirm your captures are in it — the share is only
+evidence if it contains your steps:
+
+```bash
+curl -s "$API/api/share/$TOKEN/meta" | jq '[.data.actions[] | select(.type=="screenshot") | .details.caption]'
+# expect your "01 …", "02 …" captions here; if they are missing, you shared the wrong session
 ```
 
 Write exactly one of: `session: https://thinkrun.ai/s/<token>` or
