@@ -61,7 +61,9 @@ machine-wide state; another agent or terminal attaching a different tab moves
 it under you, and your captures land in a different session than the one you
 share. `--tab` makes each command explicit.
 
-**Cloud mode** — no display, no extension, or a public URL.
+**Cloud mode** — no display, no extension, or a public URL. (Command surface
+verified against CLI 0.1.37; the end-to-end cloud path was not smoke-tested
+when this skill shipped — a session-provisioning incident on 2026-09-18.)
 
 ```bash
 thinkrun cloud start                 # needs an accepted API key
@@ -171,9 +173,9 @@ the Activity Feed. The page for it is owner-only; a reviewer needs a **share**:
 
 ```bash
 CFG=$(thinkrun config show | sed -n 's/^Config file: //p')
-API=$(jq -r .apiUrl "$CFG"); KEY=$(jq -r .apiKey "$CFG")
+API=$(jq -r .apiUrl "$CFG"); KEY=$(jq -r .apiKey "$CFG")   # read once, used once, never echoed
 SID=$(jq -r .sessionId ~/.thinkrun/local-session-$TAB_ID.json)     # local mode
-# cloud mode: SID is the id printed by `thinkrun cloud start` / `thinkrun cloud status`
+# cloud mode: SID=$(thinkrun cloud start --json | jq -r .data.sessionId), or `thinkrun cloud status --json`
 TOKEN=$(curl -s -X POST "$API/api/share" -H "x-api-key: $KEY" -H 'content-type: application/json' \
   -d "{\"sourceType\":\"session\",\"sourceId\":\"$SID\"}" | jq -r .token)
 echo "session: https://thinkrun.ai/s/$TOKEN"
@@ -186,6 +188,11 @@ evidence if it contains your steps:
 curl -s "$API/api/share/$TOKEN/meta" | jq '[.data.actions[] | select(.type=="screenshot") | .details.caption]'
 # expect your "01 …", "02 …" captions here; if they are missing, you shared the wrong session
 ```
+
+**Key handling.** `$KEY` is the user's durable API key. It exists for that
+one `curl`. Do not print it, do not put it in the report, the PR, or a log
+line. If the harness records shell output, prefer a short-lived key for this
+step.
 
 Write exactly one of: `session: https://thinkrun.ai/s/<token>` or
 `session: none (no API key)`. Never paste `/sessions/<id>` — it is a login wall.

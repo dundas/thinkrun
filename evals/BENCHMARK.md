@@ -92,7 +92,7 @@ Same v2 catalog (narrowed descriptions). Note: the bare `gpt-5.6` id is rejected
 | claude-fable-5 | **100/100** | 20 | 20 | 20 | 20 | 20 |
 | claude-sonnet-5 | 94/100 | 20 | 20 | 14 | 20 | 20 |
 
-sonnet-5's six misses are the documented strict-MCP reading (generic "MCP" asks routed to web-browse; same query ids as v2, renumbered +20). On the four pre-existing fixtures it scored 74/80 vs 72/80 in v2 — the boundary edits cost nothing and the one CLI miss closed.
+sonnet-5's six misses are the documented strict-MCP reading (generic "MCP" asks routed to web-browse; same query ids as v2, renumbered +20). On the four pre-existing fixtures it scored 74/80 vs 72/80 in v2 — no regression from the boundary edits; the +2 is within single-run variance and is not claimed as an improvement.
 
 ## Ablation — `no-prove-it` (gap semantics)
 
@@ -103,7 +103,7 @@ Removing `prove-it` and asking where its traffic goes:
 | gpt-5.6-terra | `none` ×10 | ux-audit 4, web-browse 2, cli 1, mcp 1, none 2 | 100/100 |
 | claude-sonnet-5 | `none` ×10 | ux-audit 4, web-browse 2, cli 1, mcp 1, none 2 | 94/100 |
 
-Both families send every positive to `none` — no sibling absorbs "prove this change works" — and every negative lands exactly on the sibling it was written to test. `prove-it` is a **gap**, not a duplicate. The harness gained empty-absorb semantics for this case (positives must route to `none`, negatives must not name the removed skill); the redundancy-style ablations from v2 are unchanged.
+Both families send every positive to `none` — no sibling absorbs "prove this change works" — and every negative lands exactly on the sibling it was written to test. `prove-it` is a **gap**, not a duplicate. For a gap skill the routing table above is the result; the graded 100/94 under gap semantics is true by construction and adds nothing beyond it. The harness gained empty-absorb semantics for this case (positives must route to `none`, negatives must not name the removed skill); the redundancy-style ablations from v2 are unchanged.
 
 **Contamination caught on the first run:** the first boundary edits said "(use prove-it)" inside the `ux-audit` and `web-browse` descriptions. With `prove-it` removed, both models still answered `prove-it` for all 10 positives — routing to a skill that was not installed. A description must not name a skill that may not be installed. The parentheticals were removed; the do-not phrasing carries the boundary on its own (20/20 on all three configs).
 
