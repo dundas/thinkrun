@@ -82,7 +82,7 @@ fix exists. If you are also running `prove-it`, its `before-*.png` is this.
 ```bash
 BEFORE_URL=<pre-change build>
 same_session
-thinkrun navigate "$BEFORE_URL" $T; sleep 2; visible
+thinkrun navigate "$BEFORE_URL" $T; sleep 2; visible; same_session
 thinkrun screenshot --output .artifacts/$TASK/before.png --selector "<css>" --max-dimension 1280 --caption "before" $T
 ```
 
@@ -97,7 +97,7 @@ device emulation), the pair is not comparable — retake both.
 ```bash
 AFTER_URL=<the change under test>
 same_session
-thinkrun navigate "$AFTER_URL" $T; sleep 2; visible
+thinkrun navigate "$AFTER_URL" $T; sleep 2; visible; same_session
 thinkrun screenshot --output .artifacts/$TASK/after.png --selector "<css>" --max-dimension 1280 --caption "after" $T
 ```
 
@@ -167,6 +167,14 @@ cp <existing-after>.png  .artifacts/$TASK/after.png
 Then Step 3. State where each came from in the one-line caption.
 
 ---
+
+## Known limitations
+
+- Cloud mode has no per-command session flag; `same_session` runs before each
+  navigate and capture, and another process can still switch the active
+  session in between. Local mode with `--tab` has no such gap.
+- `--selector` / `--max-dimension` depend on the installed extension; see
+  Step 2 for the local-crop fallback.
 
 ## Do NOT use for
 
