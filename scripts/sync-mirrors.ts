@@ -5,8 +5,10 @@
 // trigger-eval fixture. Nothing ever writes to `.claude/`.
 //
 // Usage:
-//   bun scripts/sync-mirrors.ts           regenerate the mirrors from .claude
-//   bun scripts/sync-mirrors.ts --check   validate; exit 1 on any violation
+//   bun scripts/sync-mirrors.ts                regenerate the mirrors from .claude
+//   bun scripts/sync-mirrors.ts --check        validate; exit 1 on any violation
+//   ... --root <dir>                           operate on another tree (tests); the
+//                                              default is this checkout, never cwd
 //
 // --check enforces:
 //   1. every mirror equals .claude/skills (both directions, byte compare)
@@ -16,7 +18,7 @@
 //      equals its directory, and whose `description` is non-empty and <= 1024 chars
 
 import { readdirSync, readFileSync, statSync, mkdirSync, writeFileSync, rmSync, existsSync } from "node:fs";
-import { join, relative, dirname } from "node:path";
+import { join, relative, dirname, resolve } from "node:path";
 
 export const CANONICAL = ".claude";
 export const MIRRORS = [".cursor", ".codex", ".gemini"];
@@ -104,10 +106,20 @@ export function parseFrontmatter(raw: string): Record<string, string> | null {
   if (end === -1) return null;
   const block = raw.slice(4, end);
   const out: Record<string, string> = {};
-  for (const line of block.split("\n")) {
-    const m = line.match(/^([A-Za-z_][\w-]*):\s*(.*)$/);
+  const lines = block.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i].match(/^([A-Za-z_][\w-]*):\s*(.*)$/);
     if (!m) continue;
     let val = m[2].trim();
+    // YAML block scalar (`>` folded / `|` literal): gather the indented lines
+    if (/^[>|][+-]?$/.test(val)) {
+      const parts: string[] = [];
+      while (i + 1 < lines.length && (/^\s+\S/.test(lines[i + 1]) || lines[i + 1].trim() === "")) {
+        parts.push(lines[++i].trim());
+      }
+      out[m[1]] = parts.join(val.startsWith(">") ? " " : "\n").trim();
+      continue;
+    }
     // frontmatter values may be double-quoted; strip one layer
     if (val.length >= 2 && val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1).replace(/\\"/g, '"');
     out[m[1]] = val;
@@ -165,9 +177,16 @@ export function sync(root: string): string[] {
   return written;
 }
 
+// The repo root is derived from this file's location, never from cwd, so the
+// script can't be pointed at another checkout's .cursor/.codex/.gemini by
+// accident (mech-browse, for one, has all three).
+export const REPO_ROOT = resolve(import.meta.dir, "..");
+
 if (import.meta.main) {
-  const root = process.cwd();
-  const mode = process.argv.includes("--check") ? "check" : "sync";
+  const args = process.argv.slice(2);
+  const rootIdx = args.indexOf("--root");
+  const root = rootIdx === -1 ? REPO_ROOT : resolve(args[rootIdx + 1] ?? "");
+  const mode = args.includes("--check") ? "check" : "sync";
   if (mode === "check") {
     const violations = check(root);
     if (violations.length) {

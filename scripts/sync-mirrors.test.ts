@@ -2,7 +2,7 @@ import { test, expect, beforeEach, afterEach } from "bun:test";
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
-import { check, sync, checkFixture, checkSkill, parseFrontmatter, CANONICAL, MIRRORS, FIXTURE_SIZE } from "./sync-mirrors";
+import { check, sync, checkFixture, checkSkill, parseFrontmatter, CANONICAL, MIRRORS, FIXTURE_SIZE, REPO_ROOT } from "./sync-mirrors";
 
 let root: string;
 
@@ -120,6 +120,21 @@ test("parseFrontmatter strips one layer of double quotes and keeps unquoted valu
   expect(fm?.category).toBe("ux");
 });
 
+test("REPO_ROOT is this checkout, not cwd", () => {
+  expect(REPO_ROOT).toBe(join(import.meta.dir, ".."));
+  expect(REPO_ROOT).not.toBe(root);
+});
+
+test("frontmatter block scalars (> and |) are read in full, so a folded description is measured", () => {
+  const folded = parseFrontmatter("---\nname: x\ndescription: >\n  Records visual proof\n  while testing.\ncategory: ux\n---\n");
+  expect(folded?.description).toBe("Records visual proof while testing.");
+  expect(folded?.category).toBe("ux");
+  const literal = parseFrontmatter("---\ndescription: |\n  line one\n  line two\n---\n");
+  expect(literal?.description).toBe("line one\nline two");
+  const long = "---\nname: x\ndescription: >\n  " + "y".repeat(1025) + "\n---\n";
+  expect(checkSkill("x", "p", long)).toEqual(["p: description is 1025 chars (max 1024)"]);
+});
+
 test("real repo fixtures and skills pass the checks", () => {
   const repo = join(import.meta.dir, "..");
   expect(existsSync(join(repo, CANONICAL, "skills"))).toBe(true);
@@ -129,7 +144,7 @@ test("real repo fixtures and skills pass the checks", () => {
 test("CLI --check exits 1 with the violation text on drift", async () => {
   const p = join(root, ".cursor/skills/alpha/SKILL.md");
   writeFileSync(p, readFileSync(p, "utf8") + "\n");
-  const proc = Bun.spawn(["bun", join(import.meta.dir, "sync-mirrors.ts"), "--check"], { cwd: root, stderr: "pipe", stdout: "pipe" });
+  const proc = Bun.spawn(["bun", join(import.meta.dir, "sync-mirrors.ts"), "--check", "--root", root], { cwd: tmpdir(), stderr: "pipe", stdout: "pipe" });
   const code = await proc.exited;
   const err = await new Response(proc.stderr).text();
   expect(code).toBe(1);
@@ -138,8 +153,14 @@ test("CLI --check exits 1 with the violation text on drift", async () => {
   expect(MIRRORS).toContain(".cursor");
 });
 
-test("CLI --check exits 0 on a clean tree", async () => {
+test("CLI without --root checks this checkout even when cwd is elsewhere", async () => {
   const proc = Bun.spawn(["bun", join(import.meta.dir, "sync-mirrors.ts"), "--check"], { cwd: root, stdout: "pipe", stderr: "pipe" });
+  expect(await proc.exited).toBe(0);
+  expect(await new Response(proc.stdout).text()).toMatch(/skills-check: ok \(\d+ skills, 3 mirrors\)/);
+});
+
+test("CLI --check exits 0 on a clean tree", async () => {
+  const proc = Bun.spawn(["bun", join(import.meta.dir, "sync-mirrors.ts"), "--check", "--root", root], { cwd: tmpdir(), stdout: "pipe", stderr: "pipe" });
   expect(await proc.exited).toBe(0);
   expect(await new Response(proc.stdout).text()).toContain("skills-check: ok (2 skills, 3 mirrors)");
 });
