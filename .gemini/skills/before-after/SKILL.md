@@ -42,10 +42,14 @@ when this skill shipped — a session-provisioning incident on 2026-09-18.)
 # machine another agent's window can be in front, and Chrome returns
 # "image readback failed" for a hidden tab.
 TAB_ID=$(thinkrun new-window "about:blank" --json | jq -er .data.tabId) || exit 1; T="--tab $TAB_ID"
-thinkrun evaluate 'document.visibilityState' $T      # must be "visible" before each capture
+visible() { [ "$(thinkrun evaluate 'document.visibilityState' $T --json | jq -r .data)" = "visible" ] || { echo "tab is hidden; bring the window forward and retake"; exit 1; }; }
 # cloud
 SID=$(thinkrun cloud start --json | jq -er .data.sessionId) || exit 1; T="--mode cloud"
-trap 'thinkrun cloud stop >/dev/null 2>&1' EXIT
+trap 'thinkrun cloud stop -s "$SID" >/dev/null 2>&1' EXIT      # stops THIS session, never whatever is active
+# the active cloud session is machine-wide state; there is no per-command session flag,
+# so assert it before every navigate and capture:
+same_session() { [ "$(thinkrun cloud status --json | jq -r .data.sessionId)" = "$SID" ] || { echo "active cloud session changed; stop"; exit 1; }; }
+visible() { [ "$(thinkrun evaluate 'document.visibilityState' $T --json | jq -r .data)" = "visible" ] || { echo "tab is hidden; bring the window forward and retake"; exit 1; }; }
 
 TASK=<short-slug>; mkdir -p .artifacts/$TASK        # gitignored; evidence is posted, never committed
 ```
@@ -65,7 +69,8 @@ fix exists. If you are also running `prove-it`, its `before-*.png` is this.
 
 ```bash
 BEFORE_URL=<pre-change build>
-thinkrun navigate "$BEFORE_URL" $T; sleep 2
+[ "$T" = "--mode cloud" ] && same_session
+thinkrun navigate "$BEFORE_URL" $T; sleep 2; visible
 thinkrun screenshot --output .artifacts/$TASK/before.png --selector "<css>" --max-dimension 1280 --caption "before" $T
 ```
 
@@ -79,7 +84,8 @@ device emulation), the pair is not comparable — retake both.
 
 ```bash
 AFTER_URL=<the change under test>
-thinkrun navigate "$AFTER_URL" $T; sleep 2
+[ "$T" = "--mode cloud" ] && same_session
+thinkrun navigate "$AFTER_URL" $T; sleep 2; visible
 thinkrun screenshot --output .artifacts/$TASK/after.png --selector "<css>" --max-dimension 1280 --caption "after" $T
 ```
 
@@ -130,7 +136,7 @@ PNGs are in `.artifacts/$TASK/` for them to drag into the PR.
 gh pr comment <n> --body-file .artifacts/$TASK/before-after.md
 ```
 
-Clean up: `thinkrun cloud stop` (cloud). Local tabs need nothing.
+Clean up: the `trap` stops your cloud session by id. Local: `thinkrun release $T`.
 
 ---
 
