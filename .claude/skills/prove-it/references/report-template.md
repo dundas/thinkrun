@@ -8,7 +8,7 @@ path, a measured value, or a share-link step. No prose in the table.
 
 - revision: `<sha> <branch>` (or deployment URL)
 - mode: local | cloud
-- session: https://thinkrun.ai/s/<token>  |  none (no API key)
+- session: https://thinkrun.ai/s/<token> (password-protected)  |  not shared  |  none (no API key)
 - captured: <YYYY-MM-DD HH:MM>
 
 | # | Target | Result | Evidence |
@@ -26,7 +26,7 @@ path, a measured value, or a share-link step. No prose in the table.
 
 - revision: `a1b2c3d feat/coupon-validation`
 - mode: local
-- session: https://thinkrun.ai/s/BxFg…mss
+- session: https://thinkrun.ai/s/BxFg…mss (password-protected)
 - captured: 2026-09-18 14:02
 
 | # | Target | Result | Evidence |

@@ -112,9 +112,9 @@ pre-fix build is reachable, write `before: unavailable` in the report — do not
 fabricate one.
 
 ```bash
-# on the pre-fix build:
+BEFORE_URL=<the pre-fix build — e.g. http://localhost:4001 for the base worktree, or the previous deploy>
 thinkrun clear-logs $T
-thinkrun navigate "$URL" $T; sleep 2
+thinkrun navigate "$BEFORE_URL" $T; sleep 2
 thinkrun screenshot --output .artifacts/$TASK/before-01-<target-slug>.png --caption "before: <target>" $T
 thinkrun console --json $T | jq '.data.logs' > .artifacts/$TASK/before-01-console.json
 thinkrun network --json $T | jq '.data.requests' > .artifacts/$TASK/before-01-network.json
@@ -193,8 +193,24 @@ a sentence.
 | 3 | export downloads a 3-column CSV | not-exercised | export button disabled on staging (no data fixture) |
 ```
 
-**Session line.** With an accepted API key, the local session is recorded to
-the Activity Feed. The page for it is owner-only; a reviewer needs a **share**:
+**Session line.** With an accepted API key, the session is recorded to the
+Activity Feed. The page for it is owner-only; a reviewer needs a **share**.
+
+A share of a session recorded on a logged-in tab can expose the user's
+authenticated pages, API responses, console output and request details to
+anyone with the link. So:
+
+- **Ask before sharing.** Never create a share without the user's explicit
+  yes for this run. Default is `session: not shared`.
+- **Password-protect it by default** (`password` in the request) and give the
+  password to the user out of band — never in the report, the PR, or a log.
+- **Leave console and network out of the share** unless the user asks
+  (`includeConsoleLogs` / `includeNetworkRequests` default false here); the
+  per-target JSON files already hold that evidence locally.
+- Prefer a test account and non-production data for anything that will be
+  shared.
+
+With the user's yes:
 
 ```bash
 CFG=$(thinkrun config show | sed -n 's/^Config file: //p'); CFG=${CFG:-$HOME/.config/thinkrun/config.json}
@@ -204,9 +220,11 @@ API=$(jq -r .apiUrl "$CFG"); KEY=$(jq -r .apiKey "$CFG")   # read once, used onc
 # cloud mode: SID is the one you captured in Step 0; if lost, `thinkrun cloud status --json | jq -r .data.sessionId`
 # never start a new cloud session here — it would be empty
 # the key goes to curl via a config on stdin, never as an argument (argv is visible to `ps`)
+PW=$(openssl rand -base64 12)     # goes to the user, never into the report
 TOKEN=$(printf 'header = "x-api-key: %s"\n' "$KEY" | curl -s -K - -X POST "$API/api/share" \
-  -H 'content-type: application/json' -d "{\"sourceType\":\"session\",\"sourceId\":\"$SID\"}" | jq -r .token)
-echo "session: https://thinkrun.ai/s/$TOKEN"
+  -H 'content-type: application/json' \
+  -d "{\"sourceType\":\"session\",\"sourceId\":\"$SID\",\"password\":\"$PW\",\"includeConsoleLogs\":false,\"includeNetworkRequests\":false}" | jq -r .token)
+echo "session: https://thinkrun.ai/s/$TOKEN (password-protected; password given to the user separately)"
 ```
 
 Before pasting the link, confirm your captures are in it — the share is only
@@ -222,9 +240,10 @@ to `curl` on stdin (never in argv), and used for that one request. Do not
 print it, do not put it in the report, the PR, or a log line. If the harness
 records shell output, prefer a short-lived key for this step.
 
-Write exactly one of: `session: https://thinkrun.ai/s/<token>` or
-`session: none (no API key)`. Never paste `/sessions/<id>` — it is a login wall.
-Images are inlined or attached regardless; the share is supplementary.
+Write exactly one of: `session: https://thinkrun.ai/s/<token> (password-protected)`,
+`session: not shared`, or `session: none (no API key)`. Never paste
+`/sessions/<id>` — it is a login wall. Images are inlined or attached
+regardless; the share is supplementary.
 
 In cloud mode, `thinkrun cloud artifacts` lists the session's screenshots with
 presigned URLs; there is no equivalent for local sessions, so the named captures
