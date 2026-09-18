@@ -72,6 +72,9 @@ when this skill shipped — a session-provisioning incident on 2026-09-18.)
 ```bash
 SID=$(thinkrun cloud start --json | jq -r .data.sessionId)   # needs an accepted API key
 T="--mode cloud"        # cloud mode: no --tab; commands run against the active cloud session
+# the active cloud session is also machine-wide state (`cloud use`, another `cloud start`).
+# There is no per-command session flag, so assert it before every target's captures:
+same_session() { [ "$(thinkrun cloud status --json | jq -r .data.sessionId)" = "$SID" ] || { echo "active cloud session changed; stop"; exit 1; }; }
 ```
 
 If the target is on localhost, confirm the port answers *your* process before
@@ -123,7 +126,7 @@ For each target, in order:
    unless setup is the target.
 2. **Bound the window:** `thinkrun clear-logs $T` — console and network
    buffers are cumulative; without this, an earlier target's error or request
-   gets attributed to this one.
+   gets attributed to this one. In cloud mode run `same_session` first.
 3. Perform the interaction: `thinkrun click`, `fill`, `type`, `press`, `select`,
    `scroll`, `wait-for-text` — each with `$T`.
 4. Capture — this is the evidence, not the audit-mode screenshot:
