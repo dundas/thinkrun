@@ -1,6 +1,6 @@
 [
   {"query": "can you do a UX review of our new onboarding flow at staging.ourapp.com? walk through it like a new user and tell me everything that's confusing", "should_trigger": true},
-  {"query": "we just shipped the checkout redesign — verify the feature works end to end and flag anything that looks off", "should_trigger": true},
+  {"query": "walk through the new checkout redesign as a first-time buyer and flag everything that looks off", "should_trigger": true},
   {"query": "is the signup page broken? a customer said they couldn't get past the email step", "should_trigger": true},
   {"query": "QA the settings page for me, screenshot each section and score it", "should_trigger": true},
   {"query": "walk through the password reset journey on our app and write up a report with fixes in priority order", "should_trigger": true},

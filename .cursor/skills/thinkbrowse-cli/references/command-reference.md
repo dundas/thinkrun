@@ -4,7 +4,8 @@
 
 ```bash
 thinkbrowse tabs                          # List Chrome tabs (local only)
-thinkbrowse attach <tabId>                # Attach to a tab — all commands route here
+thinkbrowse attach <tabId> [--audit]      # Attach to a tab — all commands route here; --audit = screenshot after each state change (best-effort)
+thinkbrowse audit on|off|status [--tab <tabId>]   # Toggle/inspect audit mode for the attached local tab
 thinkbrowse release [--group <name>]      # Release tab lock + close CLI session
 thinkbrowse new-window [url] [--no-focus] # Open new Chrome window (local)
 
@@ -42,7 +43,8 @@ thinkbrowse wait-for-text <text> [--timeout <ms>]
 
 ```bash
 thinkbrowse snapshot [--tab <tabId>]                     # Accessibility tree (best for AI)
-thinkbrowse screenshot [--output <path>] [--full-page]   # PNG capture
+thinkbrowse screenshot [--output <path>] [--full-page] [--selector <sel>] [--caption <text>] [--max-dimension <px>]
+                                                          # PNG capture; --caption syncs a local screenshot into the Activity Feed session
 thinkbrowse extract <selector> [--all] [--attribute <attr>]
 thinkbrowse evaluate <javascript> [--tab <tabId>]        # Execute JS, return value
 thinkbrowse url [--tab <tabId>]                          # Current URL (plain string)
@@ -50,7 +52,7 @@ thinkbrowse title [--tab <tabId>]                        # Page title
 thinkbrowse html [--tab <tabId>]                         # Full page HTML
 thinkbrowse console [--tab <tabId>]                      # Console log messages
 thinkbrowse network [--tab <tabId>]                      # Network request log
-thinkbrowse clear-logs [--tab <tabId>]                   # Reset console/network (local only)
+thinkbrowse clear-logs [--tab <tabId>] [--mode local|cloud]   # Reset console/network buffers (local and cloud)
 ```
 
 ## Dialog Handling
@@ -60,6 +62,10 @@ thinkbrowse dialog get                    # Check for pending dialog
 thinkbrowse dialog accept [text]          # Accept (optional prompt text)
 thinkbrowse dialog dismiss                # Dismiss
 ```
+
+## Mode override
+
+Every browser command accepts `--mode local|cloud` to override the persisted context for that one call. `--tab <tabId>` targets a specific local tab and bypasses the machine-wide "active tab", which another agent or terminal can move.
 
 ## Tab Targeting (Multi-Agent)
 

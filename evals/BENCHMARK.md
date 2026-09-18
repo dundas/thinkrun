@@ -81,3 +81,42 @@ Same v2 catalog (narrowed descriptions). Note: the bare `gpt-5.6` id is rejected
 1. terra matches the best of the board (perfect at low+medium); sol is flat 79 at every effort — its only miss is the known "verify the blog post renders correctly live" boundary query (-> ux-audit), at all three efforts.
 2. luna-high (72/80) fails the identical 7 thinkbrowse-mcp query ids as claude-sonnet-5 (22, 23, 25, 27, 28, 29, 30 — the generic-"MCP" asks, all routed to web-browse). The strict-MCP reading is therefore cross-family (a strictness disposition, not a Claude quirk), reinforcing the decision to document rather than tune: web-browse legitimately claims "any MCP client".
 3. Within luna, the strict reading correlates with effort: 1 of the 7 strict-MCP queries misses at low (id 22), 1 at medium (id 28), all 7 at high. Effort does not straightforwardly improve routing; luna-low also shows the run's only true over-capture (a "best headless browser library" knowledge question -> web-browse).
+
+# Matrix v3 — 5-skill catalog with `prove-it`, 2026-09-18
+
+`prove-it` (the prove / quality-control step of a software-factory workflow: named test targets → pass/fail table with captured evidence) joins the catalog. Two sibling descriptions were edited to draw the boundary — see **Boundary rules** below. 100 queries (5 fixtures × 20). Descriptions are now read from the live `SKILL.md` frontmatter at build time (the harness previously carried a copy).
+
+| Config | Overall | prove-it | cli | mcp | ux-audit | web-browse |
+|---|---|---|---|---|---|---|
+| gpt-5.6-terra (codex exec) | **100/100** | 20 | 20 | 20 | 20 | 20 |
+| claude-fable-5 | **100/100** | 20 | 20 | 20 | 20 | 20 |
+| claude-sonnet-5 | 94/100 | 20 | 20 | 14 | 20 | 20 |
+
+sonnet-5's six misses are the documented strict-MCP reading (generic "MCP" asks routed to web-browse; same query ids as v2, renumbered +20). On the four pre-existing fixtures it scored 74/80 vs 72/80 in v2 — no regression from the boundary edits; the +2 is within single-run variance and is not claimed as an improvement.
+
+## Ablation — `no-prove-it` (gap semantics)
+
+Removing `prove-it` and asking where its traffic goes:
+
+| Config | prove-it positives → | prove-it negatives → | Graded |
+|---|---|---|---|
+| gpt-5.6-terra | `none` ×10 | ux-audit 4, web-browse 2, cli 1, mcp 1, none 2 | 100/100 |
+| claude-sonnet-5 | `none` ×10 | ux-audit 4, web-browse 2, cli 1, mcp 1, none 2 | 94/100 |
+
+Both families send every positive to `none` — no sibling absorbs "prove this change works" — and every negative lands exactly on the sibling it was written to test. `prove-it` is a **gap**, not a duplicate. For a gap skill the routing table above is the result; the graded 100/94 under gap semantics is true by construction and adds nothing beyond it. The harness gained empty-absorb semantics for this case (positives must route to `none`, negatives must not name the removed skill); the redundancy-style ablations from v2 are unchanged.
+
+**Contamination caught on the first run:** the first boundary edits said "(use prove-it)" inside the `ux-audit` and `web-browse` descriptions. With `prove-it` removed, both models still answered `prove-it` for all 10 positives — routing to a skill that was not installed. A description must not name a skill that may not be installed. The parentheticals were removed; the do-not phrasing carries the boundary on its own (20/20 on all three configs).
+
+## Boundary rules (principled, do not tune away)
+
+Three skills can plausibly claim "verify …":
+
+| Ask shape | Skill |
+|---|---|
+| Exploratory — "walk through it, tell me what's wrong", a fix list, opinions | `ux-audit` |
+| No change under test — "go check whether the page loads", "screenshot X" | `web-browse` |
+| A change under test **and** named claims — "prove the fix works", "attach evidence to the PR", "did the agent actually test this" | `prove-it` |
+
+Applied to the fixtures: `ux-audit` #2 became exploratory ("walk through the new checkout redesign as a first-time buyer and flag everything that looks off"); the confirmatory phrasing moved to `prove-it`; `web-browse` #7 dropped the word "verify" ("load the new blog post live and screenshot it — do the images and code blocks render?"). The descriptions lost "verify something works live" (web-browse) and "verify the feature we shipped" (ux-audit).
+
+Reproduce: `bun evals/run-eval.ts build` → `codex exec --model gpt-5.6-terra --skip-git-repo-check -o out.txt - < evals/prompt.txt` / `claude -p --model <id> --output-format text "$(cat evals/prompt.txt)"` → `bun evals/run-eval.ts grade <config> out.txt`. Raw outputs under `evals/results/raw/`.

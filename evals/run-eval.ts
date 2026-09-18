@@ -8,28 +8,39 @@
 //
 // Grading always derives expectations directly from the fixture files (sorted,
 // deterministic ids), so grade runs never depend on a previously written manifest.
-import { readdirSync } from "node:fs";
+import { readdirSync, readFileSync, existsSync } from "node:fs";
 
 const BASE = import.meta.dir;
 // Fixtures live per-skill next to each SKILL.md; the .claude mirror is canonical.
 const SKILLS_DIR = `${BASE}/../.claude/skills`;
 
-const CATALOG: Record<string, string> = {
-  "thinkbrowse-cli":
-    "Control browsers via the ThinkBrowse CLI (the thinkbrowse / thinkrun command) — navigate pages, interact with elements, extract content, take screenshots. Use ONLY when the user explicitly names the thinkbrowse or thinkrun CLI, or asks to drive the browser from shell scripts / terminal commands. For general browse, scrape, or automation asks that don't name the CLI, prefer the web-browse skill. Do NOT use for simple URL fetching (use WebFetch tool instead).",
-  "thinkbrowse-mcp":
-    "Control browsers via ThinkBrowse MCP tools — navigate pages, interact with elements, extract content, take screenshots. Use ONLY when the user explicitly references the thinkbrowse/thinkrun MCP server or its MCP tools. For general browse, scrape, or automation asks that don't name MCP, prefer the web-browse skill. Do NOT use for simple URL fetching (use WebFetch tool instead).",
-  "ux-audit":
-    "Walk through a product UI as a real user — take screenshots, find broken flows, and produce a structured report with every fix listed. Use when: audit the UI or UX, do a UX review, QA a feature, check if something looks right, verify a user flow or onboarding, walk through a journey, 'is X broken?', 'check how X works', 'verify the feature we shipped'. Do NOT use for: fixing a specific known bug, reading a component's code, deploying, writing tests, or answering questions about code structure.",
-  "web-browse":
-    "Browse the web programmatically with ThinkRun — drive a real or cloud browser to navigate, interact, extract, and screenshot, from the CLI or any MCP client. Use when: visit or open a URL, check a webpage, interact with a browser, verify something works live, take screenshots of a page, scrape or extract content, automate a browser task. Do NOT use for structured UX audits with scoring and fix reports — use ux-audit for that.",
-};
+// The catalog is the live frontmatter of each .claude/skills/<name>/SKILL.md —
+// never a copy. A copy here would let the eval measure text that no longer
+// ships (it did, until 2026-09-18).
+import { parseFrontmatter } from "../scripts/check-skills";
+
+function loadCatalog(): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const name of readdirSync(SKILLS_DIR).sort()) {
+    const path = `${SKILLS_DIR}/${name}/SKILL.md`;
+    if (!existsSync(path)) continue;
+    const fm = parseFrontmatter(readFileSync(path, "utf8"));
+    if (!fm?.description) throw new Error(`${path}: no description in frontmatter`);
+    out[name] = fm.description;
+  }
+  return out;
+}
+const CATALOG = loadCatalog();
 
 // Catalog ablations: `exclude` removes skills from the prompt; `absorb` maps a
 // removed skill's fixture to the sibling(s) expected to take over its traffic.
+// An EMPTY absorb list means the skill is a gap, not a duplicate: its positives
+// must route to "none" (no sibling over-captures) and its negatives must not
+// name the removed skill (no hallucinated routing).
 const VARIANTS: Record<string, { exclude: string[]; absorb: Record<string, string[]> }> = {
   "no-web-browse": { exclude: ["web-browse"], absorb: { "web-browse": ["thinkbrowse-cli", "thinkbrowse-mcp"] } },
   "no-cli-mcp": { exclude: ["thinkbrowse-cli", "thinkbrowse-mcp"], absorb: { "thinkbrowse-cli": ["web-browse"], "thinkbrowse-mcp": ["web-browse"] } },
+  "no-prove-it": { exclude: ["prove-it"], absorb: { "prove-it": [] } },
 };
 
 type Row = { id: number; fixture: string; query: string; should_trigger: boolean };
@@ -74,10 +85,13 @@ async function grade(rows: Row[], rawFile: string, absorb: Record<string, string
   const perFixture: Record<string, { pass: number; total: number; fails: any[] }> = {};
   for (const r of rows) {
     const got = byId.get(r.id) ?? "MISSING";
-    const acceptable = absorb[r.fixture] ?? [r.fixture];
+    const absorbers = absorb[r.fixture];
+    const isGap = Array.isArray(absorbers) && absorbers.length === 0;
+    const acceptable = isGap ? ["none"] : (absorbers ?? [r.fixture]);
     // Negatives must avoid the absorbing siblings AND the original fixture skill —
     // answering a skill that isn't in the ablated catalog is a hallucination, not a pass.
-    const forbidden = absorb[r.fixture] ? [...acceptable, r.fixture] : acceptable;
+    // For a gap skill the only forbidden answer on a negative is the removed skill itself.
+    const forbidden = isGap ? [r.fixture] : absorbers ? [...acceptable, r.fixture] : acceptable;
     const pass = r.should_trigger ? acceptable.includes(got) : !forbidden.includes(got);
     const pf = (perFixture[r.fixture] ??= { pass: 0, total: 0, fails: [] });
     pf.total++;

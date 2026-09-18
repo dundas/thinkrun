@@ -1,6 +1,6 @@
 ---
 name: web-browse
-description: "Browse the web programmatically with ThinkRun — drive a real or cloud browser to navigate, interact, extract, and screenshot, from the CLI or any MCP client. Use when: visit or open a URL, check a webpage, interact with a browser, verify something works live, take screenshots of a page, scrape or extract content, automate a browser task. Do NOT use for structured UX audits with scoring and fix reports — use ux-audit for that."
+description: "Browse the web programmatically with ThinkRun — drive a real or cloud browser to navigate, interact, extract, and screenshot, from the CLI or any MCP client. Use when: visit or open a URL, check a webpage, interact with a browser, take screenshots of a page, scrape or extract content, automate a browser task. Do NOT use for structured UX audits with scoring and fix reports (use ux-audit), or for proving that a change works with pass/fail evidence for a PR."
 category: browse
 sync: all
 tags: [browsing, automation, scraping, testing]
