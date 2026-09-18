@@ -57,6 +57,47 @@ test("sync refuses to write through a symlinked harness directory", () => {
   }
 });
 
+test("a symlinked harness dir pointing INSIDE the checkout (.cursor -> .claude) is refused by sync and named by check", () => {
+  rmSync(join(root, ".cursor"), { recursive: true });
+  symlinkSync(join(root, CANONICAL), join(root, ".cursor"));
+  const before = readFileSync(join(root, CANONICAL, "skills/alpha/SKILL.md"), "utf8");
+  expect(() => sync(root)).toThrow(/passes through symlink \.cursor/);
+  expect(readFileSync(join(root, CANONICAL, "skills/alpha/SKILL.md"), "utf8")).toBe(before);
+  expect(check(root)).toContain(".cursor: symlink (mirrors must be real directories)");
+});
+
+test("a symlinked skills dir or canonical tree is named and never walked", () => {
+  const outside = mkdtempSync(join(tmpdir(), "outside-"));
+  try {
+    mkdirSync(join(outside, "alpha"), { recursive: true });
+    rmSync(join(root, ".codex/skills"), { recursive: true });
+    symlinkSync(outside, join(root, ".codex/skills"));
+    expect(check(root)).toContain(".codex/skills: symlink (mirrors must be real directories)");
+    expect(() => sync(root)).toThrow(/passes through symlink \.codex\/skills/);
+    expect(existsSync(join(outside, "alpha/SKILL.md"))).toBe(false);
+    rmSync(join(root, CANONICAL, "skills"), { recursive: true });
+    symlinkSync(outside, join(root, CANONICAL, "skills"));
+    expect(check(root)).toEqual([".claude/skills: symlink (the canonical tree must be a real directory)"]);
+    expect(() => sync(root)).toThrow(/refusing to sync: \.claude\/skills is a symlink/);
+  } finally {
+    rmSync(outside, { recursive: true, force: true });
+  }
+});
+
+test("a dangling symlink at a mirror file destination is refused by sync, not written through", () => {
+  const outside = mkdtempSync(join(tmpdir(), "outside-"));
+  try {
+    const dest = join(root, ".gemini/skills/alpha/SKILL.md");
+    rmSync(dest);
+    symlinkSync(join(outside, "does-not-exist-yet.md"), dest);
+    expect(() => sync(root)).toThrow(/passes through symlink \.gemini\/skills\/alpha\/SKILL\.md/);
+    expect(existsSync(join(outside, "does-not-exist-yet.md"))).toBe(false);
+    expect(check(root)).toContain(".gemini/skills/alpha/SKILL.md: symlink (mirrors must be copies)");
+  } finally {
+    rmSync(outside, { recursive: true, force: true });
+  }
+});
+
 test("a directory in place of an expected file is a violation, not a crash", () => {
   rmSync(join(root, ".cursor/skills/alpha/SKILL.md"));
   mkdirSync(join(root, ".cursor/skills/alpha/SKILL.md"));
@@ -118,8 +159,8 @@ test("symlinks are violations, in mirrors and in the canonical tree, and never f
   // the link is named even though its target's bytes match; nothing is followed
   expect(v).toContain(".codex/skills/alpha/SKILL.md: symlink (mirrors must be copies)");
   expect(v.some((x) => x.includes("differs"))).toBe(false);
-  // sync does not delete: the link is left for a human, and check keeps reporting it
-  expect(() => sync(root)).not.toThrow();
+  // sync refuses to write through the link and does not delete it; a human removes it
+  expect(() => sync(root)).toThrow(/passes through symlink \.codex\/skills\/alpha\/SKILL\.md/);
   expect(check(root)).toContain(".codex/skills/alpha/SKILL.md: symlink (mirrors must be copies)");
   rmSync(join(root, ".codex/skills/alpha/SKILL.md"));
   sync(root);

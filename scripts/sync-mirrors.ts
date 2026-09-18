@@ -21,7 +21,7 @@
 //   3. every SKILL.md opens with YAML frontmatter whose `name` is kebab-case and
 //      equals its directory, and whose `description` is non-empty and <= 1024 chars
 
-import { readdirSync, readFileSync, lstatSync, mkdirSync, writeFileSync, existsSync, realpathSync } from "node:fs";
+import { readdirSync, readFileSync, lstatSync, mkdirSync, writeFileSync, existsSync } from "node:fs";
 import { join, relative, dirname, resolve } from "node:path";
 
 export const CANONICAL = ".claude";
@@ -31,6 +31,32 @@ export const FIXTURE_POSITIVES = 10;
 export const DESCRIPTION_MAX = 1024;
 
 type Violation = string;
+
+// The single symlink rule. Returns the first path component, from `root`
+// down to `path` inclusive, that is a symlink — or null. Only components that
+// exist are inspected (a not-yet-created file has no link to be). Every read
+// root and every write destination in this script goes through this, so a
+// harness directory, a skills directory, a file, or a dangling link at any
+// level is caught the same way: named, never followed.
+function symlinkInPath(root: string, path: string): string | null {
+  const rel = relative(root, path);
+  if (rel === "" || rel.startsWith("..")) return null;
+  let cur = root;
+  for (const part of rel.split("/")) {
+    cur = join(cur, part);
+    if (!existsSync(cur) && !isSymlink(cur)) return null; // nothing further exists
+    if (isSymlink(cur)) return relative(root, cur);
+  }
+  return null;
+}
+
+function isSymlink(path: string): boolean {
+  try {
+    return lstatSync(path).isSymbolicLink();
+  } catch {
+    return false;
+  }
+}
 
 // Symlinks are never followed: a mirror made of links to the canonical files
 // would compare equal by content while not being a copy, and a dangling link
@@ -80,11 +106,18 @@ function readRegular(path: string): Buffer | null {
 export function checkMirrors(root: string): Violation[] {
   const v: Violation[] = [];
   const canonDir = join(root, CANONICAL, "skills");
+  const canonRootLink = symlinkInPath(root, canonDir);
+  if (canonRootLink) return [`${canonRootLink}: symlink (the canonical tree must be a real directory)`];
   const canonLinks: string[] = [];
   const canonFiles = walk(canonDir, canonDir, canonLinks);
   for (const l of canonLinks) v.push(`${CANONICAL}/skills/${l}: symlink (not allowed in the skill tree)`);
   for (const mirror of MIRRORS) {
     const mirrorDir = join(root, mirror, "skills");
+    const rootLink = symlinkInPath(root, mirrorDir);
+    if (rootLink) {
+      v.push(`${rootLink}: symlink (mirrors must be real directories)`);
+      continue; // never walk through it
+    }
     const mirrorLinks: string[] = [];
     const mirrorFiles = walk(mirrorDir, mirrorDir, mirrorLinks);
     for (const l of mirrorLinks) v.push(`${mirror}/skills/${l}: symlink (mirrors must be copies)`);
@@ -187,6 +220,8 @@ export function checkSkill(dirName: string, path: string, raw: string): Violatio
 
 export function check(root: string): Violation[] {
   const v: Violation[] = [];
+  const canonLink = symlinkInPath(root, join(root, CANONICAL, "skills"));
+  if (canonLink) return [`${canonLink}: symlink (the canonical tree must be a real directory)`];
   const skills = skillDirs(root);
   if (skills.length === 0) v.push(`${CANONICAL}/skills: no skills found`);
   for (const skill of skills) {
@@ -204,22 +239,12 @@ export function check(root: string): Violation[] {
   return v;
 }
 
-// Every write resolves its real path and must land beneath the real root.
-// This is what makes "sync only writes inside this checkout" true even when
-// a harness directory (e.g. `.cursor`) has been replaced by a symlink.
-function assertInside(root: string, path: string): void {
-  const realRoot = realpathSync(root);
-  // resolve the deepest existing ancestor, then re-append the rest
-  let probe = path;
-  let rest = "";
-  while (!existsSync(probe)) {
-    rest = join(probe.slice(dirname(probe).length + 1), rest);
-    probe = dirname(probe);
-  }
-  const real = join(realpathSync(probe), rest);
-  if (real !== realRoot && !real.startsWith(realRoot + "/")) {
-    throw new Error(`refusing to write outside the checkout: ${path} resolves to ${real}`);
-  }
+// Before any mkdir or write: no component of the destination, from the repo
+// root down, may be a symlink. The checkout is the only tree sync can touch
+// because a write can only leave it through a link, and links are refused.
+function assertWritable(root: string, path: string): void {
+  const link = symlinkInPath(root, path);
+  if (link) throw new Error(`refusing to write outside the checkout: ${relative(root, path)} passes through symlink ${link}`);
 }
 
 // Copies canonical files over the mirrors. It never deletes: a stale extra
@@ -229,18 +254,20 @@ function assertInside(root: string, path: string): void {
 export function sync(root: string): string[] {
   const canonDir = join(root, CANONICAL, "skills");
   if (!existsSync(canonDir)) throw new Error(`${canonDir} does not exist; refusing to sync`);
+  const canonLink = symlinkInPath(root, canonDir);
+  if (canonLink) throw new Error(`refusing to sync: ${canonLink} is a symlink`);
   const written: string[] = [];
   for (const mirror of MIRRORS) {
     const mirrorDir = join(root, mirror, "skills");
-    assertInside(root, mirrorDir);
+    assertWritable(root, mirrorDir);
     for (const d of walkDirs(canonDir)) {
       const target = join(mirrorDir, d);
-      assertInside(root, target);
+      assertWritable(root, target);
       mkdirSync(target, { recursive: true });
     }
     for (const f of walk(canonDir)) {
       const target = join(mirrorDir, f);
-      assertInside(root, target);
+      assertWritable(root, target);
       mkdirSync(dirname(target), { recursive: true });
       writeFileSync(target, readFileSync(join(canonDir, f)));
       written.push(`${mirror}/skills/${f}`);
