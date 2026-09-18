@@ -115,6 +115,8 @@ fabricate one.
 BEFORE_URL=<the pre-fix build — e.g. http://localhost:4001 for the base worktree, or the previous deploy>
 thinkrun clear-logs $T
 thinkrun navigate "$BEFORE_URL" $T; sleep 2
+# perform the SAME interaction the target describes (fill, click, …) — a screenshot of
+# the untouched page is not evidence of the bug; the failure has to be on screen
 thinkrun screenshot --output .artifacts/$TASK/before-01-<target-slug>.png --caption "before: <target>" $T
 thinkrun console --json $T | jq '.data.logs' > .artifacts/$TASK/before-01-console.json
 thinkrun network --json $T | jq '.data.requests' > .artifacts/$TASK/before-01-network.json
