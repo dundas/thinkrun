@@ -2,16 +2,16 @@
 //
 // `.claude/skills/` is canonical. `.cursor/`, `.codex/` and `.gemini/` are
 // byte-for-byte copies so every harness sees the same skill text and the same
-// trigger-eval fixture. This script never writes anything; regenerating the
-// mirrors is the plain copy in package.json (`bun run sync`).
+// trigger-eval fixture. This script never writes anything. To regenerate the
+// mirrors after editing .claude/skills, copy them yourself, then re-run check:
+//   for m in .cursor .codex .gemini; do rm -rf $m/skills && cp -R .claude/skills $m/skills; done && bun run check
 //
 // Usage:
 //   bun scripts/check-skills.ts                validate this checkout; exit 1 on any violation
 //   bun scripts/check-skills.ts --root <dir>   validate another tree (tests)
 //   bun scripts/check-skills.ts --links-only   report only symlinks in or leading to
-//                                              the skill trees; `bun run sync` runs
-//                                              this before its rm -rf / cp -R so the
-//                                              copy never goes through a link
+//                                              the skill trees (worth running before
+//                                              the copy above)
 //
 // The check enforces:
 //   1. every mirror equals .claude/skills (both directions, byte compare)
