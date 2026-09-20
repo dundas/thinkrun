@@ -24,8 +24,12 @@ It needs a change under test and claims about it.
 
 - **Test targets** (required). One or more behaviours phrased as testable
   statements: "the coupon field rejects expired codes", "the dashboard loads in
-  under 300 ms", "the export button downloads a CSV with 3 columns". If the user
-  gives none, derive them from the diff or PR title, list them back, and proceed.
+  under 300 ms", "the empty state shows the import CTA". If the user gives none,
+  derive them from the diff or PR title, list them back, and proceed.
+  **Out of scope for this skill:** anything the browser session cannot observe —
+  a downloaded file's contents, an email that was sent, a row written to a
+  database. Say so and prove it another way (a script, a query) rather than
+  passing a target a screenshot cannot support.
 - **Revision under test**: `git rev-parse --short HEAD` and the branch, or the
   deployment URL. It goes in the report header.
 - **Where to post** (optional): a PR or issue number for `gh`.
@@ -233,7 +237,10 @@ PW=$(openssl rand -base64 12)     # goes to the user, never into the report
 # key AND body go to curl through the stdin config — neither appears in argv
 TOKEN=$(printf 'header = "x-api-key: %s"\nheader = "content-type: application/json"\ndata = "{\\"sourceType\\":\\"session\\",\\"sourceId\\":\\"%s\\",\\"password\\":\\"%s\\",\\"includeConsoleLogs\\":false,\\"includeNetworkRequests\\":false}"\n' "$KEY" "$SID" "$PW" \
   | curl -sf -K - -X POST "$API/api/share" | jq -er '.token // empty') || { echo "share creation failed — report 'session: not shared', do not post a link"; TOKEN=""; }
-[ -n "$TOKEN" ] && echo "session: https://thinkrun.ai/s/$TOKEN (password-protected; password given to the user separately)"
+[ -n "$TOKEN" ] && echo "session: https://thinkrun.ai/s/$TOKEN (password-protected)"
+# hand the password to the user in your reply to them — the chat, not the report,
+# not the PR, not a log. Without that step the link is unusable.
+echo "share password (give to the user directly, do not put in the report): $PW"
 ```
 
 Before pasting the link, confirm your captures are in it — the share is only
