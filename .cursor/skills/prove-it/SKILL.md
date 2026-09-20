@@ -140,8 +140,19 @@ For each target, in order:
    buffers are cumulative; without this, an earlier target's error or request
    gets attributed to this one. In cloud mode run `same_session` first.
 3. Perform the interaction: `thinkrun click`, `fill`, `type`, `press`, `select`,
-   `scroll`, `wait-for-text` — each with `$T`.
-4. Capture — this is the evidence, not the audit-mode screenshot:
+   `scroll` — each with `$T`.
+4. **Wait for the state the target names.** A capture taken the instant after a
+   click records the page mid-flight: the request has not landed, the message
+   has not rendered, and you get a false `fail` — or a false `pass` from the
+   previous state. Pick the condition from the target itself:
+   ```bash
+   thinkrun wait-for-text "This code has expired" $T        # the text the target names
+   thinkrun wait "<css-that-appears>" $T                    # or the element
+   # or poll until the expected request reaches a terminal status:
+   until thinkrun network --json $T | jq -e '[.data.requests[] | select(.url|test("/api/coupons")) | select(.status != null)] | length > 0' >/dev/null; do sleep 0.3; done
+   ```
+   A bare `sleep` is a last resort; if you use one, say so in the Evidence cell.
+5. Capture — this is the evidence, not the audit-mode screenshot:
    ```bash
    N=01; SLUG=<target-slug>
    thinkrun screenshot --output .artifacts/$TASK/$N-$SLUG.png --caption "$N $SLUG" $T
@@ -152,14 +163,14 @@ For each target, in order:
    ```
    `--caption` is what syncs a local screenshot into the Activity Feed session
    (as a screenshot action); without it the file is local only.
-5. Look at the screenshot with the Read tool. Check the console for errors and
+6. Look at the screenshot with the Read tool. Check the console for errors and
    the network list for failed or slow requests — after step 2, everything in
    the buffers belongs to this target.
-6. If `click` returns `"category": "no_op_click"`, the click did not change
+7. If `click` returns `"category": "no_op_click"`, the click did not change
    page state. That is evidence. Record it against the target; do not reach
    for `thinkrun evaluate` to call the handler directly and then call the
    button "working".
-7. Record the verdict and the reason:
+8. Record the verdict and the reason:
    - `pass` — the statement holds and the capture shows it.
    - `fail` — the statement does not hold. Say what happened instead.
    - `not-exercised` — you could not reach the state (blocked login, missing
@@ -285,8 +296,20 @@ not the PR. If every row is `pass`, continue.
 
 ## Step 5 — Post
 
+**Only post evidence a reviewer can open.** `.artifacts/` is gitignored, so a
+report whose Evidence cells are local paths proves nothing to anyone but you.
+Before commenting, check what the reviewer will be able to see:
+
+- **Share created** (the user said yes) → the captures are in the session
+  timeline; post the report with the link.
+- **No share** → do **not** post the table to the PR as proof. Give the report
+  and the file paths to the user in your reply and say what to attach. If they
+  want something on the PR now, post a short comment that names the targets and
+  their results and states that the captures are local and pending attachment —
+  never a table of paths nobody can open.
+
 ```bash
-gh pr comment <n> --body-file .artifacts/$TASK/report.md      # or gh issue comment
+gh pr comment <n> --body-file .artifacts/$TASK/report.md      # only when the evidence is reachable
 ```
 
 `gh` cannot attach images from the CLI. The screenshots reach the reviewer
