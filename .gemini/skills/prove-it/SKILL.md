@@ -79,7 +79,7 @@ when this skill shipped — a session-provisioning incident on 2026-09-18.)
 ```bash
 SID=$(thinkrun cloud start --json | jq -er .data.sessionId) || { echo "cloud start failed"; exit 1; }   # needs an accepted API key
 T="--mode cloud"        # cloud mode: no --tab; commands run against the active cloud session
-trap 'thinkrun cloud stop >/dev/null 2>&1' EXIT   # the cloud session never outlives this run, even on abort
+trap 'thinkrun cloud stop -s "$SID" >/dev/null 2>&1' EXIT   # stops THIS session by id, never whatever is active
 # the active cloud session is also machine-wide state (`cloud use`, another `cloud start`).
 # There is no per-command session flag, so assert it before every target's captures:
 same_session() { [ "$(thinkrun cloud status --json | jq -r .data.sessionId)" = "$SID" ] || { echo "active cloud session changed; stop"; exit 1; }; }
@@ -149,7 +149,11 @@ For each target, in order:
    thinkrun wait-for-text "This code has expired" $T        # the text the target names
    thinkrun wait "<css-that-appears>" $T                    # or the element
    # or poll until the expected request reaches a terminal status:
-   until thinkrun network --json $T | jq -e '[.data.requests[] | select(.url|test("/api/coupons")) | select(.status != null)] | length > 0' >/dev/null; do sleep 0.3; done
+   deadline=$((SECONDS+15))
+   until thinkrun network --json $T | jq -e '[.data.requests[] | select(.url|test("/api/coupons")) | select(.status != null)] | length > 0' >/dev/null; do
+     [ $SECONDS -lt $deadline ] || { echo "request never reached a terminal status"; break; }   # -> not-exercised
+     sleep 0.3
+   done
    ```
    A bare `sleep` is a last resort; if you use one, say so in the Evidence cell.
 5. Capture — this is the evidence, not the audit-mode screenshot:
@@ -283,7 +287,7 @@ are the record there.
 ## Step 4 — The rule
 
 If any row is `fail` or `not-exercised`, clean up first — `thinkrun audit off $T`
-(local) or `thinkrun cloud stop` (cloud) — so nothing keeps capturing or
+(local) or `thinkrun cloud stop -s "$SID"` (cloud) — so nothing keeps capturing or
 billing, then end with:
 
 > **Back to build.** Rows N, M did not pass. Fix, then run `/prove-it` again for
@@ -318,7 +322,7 @@ API key and therefore no share, say so in the comment and leave the PNGs in
 `.artifacts/$TASK/` for the human to drag into the PR. Never upload evidence to
 a third-party paste host.
 
-Clean up: `thinkrun audit off $T` (local) or `thinkrun cloud stop` (cloud).
+Clean up: `thinkrun audit off $T` (local); the cloud trap stops `$SID` by id.
 
 ---
 
