@@ -82,6 +82,11 @@ Same v2 catalog (narrowed descriptions). Note: the bare `gpt-5.6` id is rejected
 2. luna-high (72/80) fails the identical 7 thinkbrowse-mcp query ids as claude-sonnet-5 (22, 23, 25, 27, 28, 29, 30 — the generic-"MCP" asks, all routed to web-browse). The strict-MCP reading is therefore cross-family (a strictness disposition, not a Claude quirk), reinforcing the decision to document rather than tune: web-browse legitimately claims "any MCP client".
 3. Within luna, the strict reading correlates with effort: 1 of the 7 strict-MCP queries misses at low (id 22), 1 at medium (id 28), all 7 at high. Effort does not straightforwardly improve routing; luna-low also shows the run's only true over-capture (a "best headless browser library" knowledge question -> web-browse).
 
+> **Reproducing a matrix.** `run-eval.ts` builds the prompt from the *live* `SKILL.md`
+> frontmatter, so each matrix below is reproducible only at the commit that shipped it —
+> checking out a later revision measures the later catalog. v1/v2 correspond to the repo
+> state before `prove-it` landed; v3 to the commit that added it.
+
 # Matrix v3 — 5-skill catalog with `prove-it`, 2026-09-18
 
 `prove-it` (the prove / quality-control step of a software-factory workflow: named test targets → pass/fail table with captured evidence) joins the catalog. Two sibling descriptions were edited to draw the boundary — see **Boundary rules** below. 100 queries (5 fixtures × 20). Descriptions are now read from the live `SKILL.md` frontmatter at build time (the harness previously carried a copy).
