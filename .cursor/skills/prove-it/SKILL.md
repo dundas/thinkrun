@@ -215,8 +215,10 @@ anyone with the link. So:
 
 - **Ask before sharing.** Never create a share without the user's explicit
   yes for this run. Default is `session: not shared`.
-- **Password-protect it by default** (`password` in the request) and give the
-  password to the user out of band — never in the report, the PR, or a log.
+- **Password-protect it by default** (`password` in the request). Choose the
+  password yourself, never echo it, and give it to the user in your reply to
+  them — never in the report, the PR, a commit, or shell output. Without that
+  handoff the link is unusable, so do it in the same message as the link.
 - **Leave console and network out of the share** unless the user asks
   (`includeConsoleLogs` / `includeNetworkRequests` default false here); the
   per-target JSON files already hold that evidence locally.
@@ -233,14 +235,14 @@ API=$(jq -r .apiUrl "$CFG"); KEY=$(jq -r .apiKey "$CFG")   # read once, used onc
 # cloud mode: SID is the one you captured in Step 0; if lost, `thinkrun cloud status --json | jq -r .data.sessionId`
 # never start a new cloud session here — it would be empty
 # the key goes to curl via a config on stdin, never as an argument (argv is visible to `ps`)
-PW=$(openssl rand -base64 12)     # goes to the user, never into the report
+# You choose the password yourself (a few random words) and keep it in your own
+# context — do not generate it in the shell, where it would land in terminal
+# output, CI transcripts and agent traces. Put it in $PW for the one request.
+PW='<the password you chose>' 
 # key AND body go to curl through the stdin config — neither appears in argv
 TOKEN=$(printf 'header = "x-api-key: %s"\nheader = "content-type: application/json"\ndata = "{\\"sourceType\\":\\"session\\",\\"sourceId\\":\\"%s\\",\\"password\\":\\"%s\\",\\"includeConsoleLogs\\":false,\\"includeNetworkRequests\\":false}"\n' "$KEY" "$SID" "$PW" \
   | curl -sf -K - -X POST "$API/api/share" | jq -er '.token // empty') || { echo "share creation failed — report 'session: not shared', do not post a link"; TOKEN=""; }
 [ -n "$TOKEN" ] && echo "session: https://thinkrun.ai/s/$TOKEN (password-protected)"
-# hand the password to the user in your reply to them — the chat, not the report,
-# not the PR, not a log. Without that step the link is unusable.
-echo "share password (give to the user directly, do not put in the report): $PW"
 ```
 
 Before pasting the link, confirm your captures are in it — the share is only
