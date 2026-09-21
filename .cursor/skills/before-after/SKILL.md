@@ -67,7 +67,7 @@ visible() { [ "$(thinkrun evaluate 'document.visibilityState' $T --json | jq -r 
 Then, for either:
 
 ```bash
-TASK=<short-slug>; mkdir -p .artifacts/$TASK        # gitignored; evidence is posted, never committed
+TASK=<short-slug>; mkdir -p .artifacts/$TASK        # gitignored staging area; images that get published are COPIED out of it (Step 3)
 ```
 
 ---
@@ -130,10 +130,10 @@ so in the caption. Never crop one and not the other.
 
 Where the images live:
 
-- **Repo-hosted (preferred).** Commit the two PNGs to the PR branch under a
-  path the repo already uses for docs/screenshots (`docs/img/`, `.github/`),
-  or, if the repo has no such path, ask the user before adding one. Reference
-  them with the raw GitHub URL for the branch. This keeps the evidence with
+- **Repo-hosted (preferred).** Copy the two PNGs out of `.artifacts/` into a
+  path the repo already uses for docs/screenshots (`docs/img/`, `.github/`)
+  and commit them on the PR branch; if the repo has no such path, ask the user
+  before adding one. Reference them with the raw GitHub URL for the branch. This keeps the evidence with
   the code and behind the repo's own access control.
 - **ThinkRun share (optional, with the user's explicit yes).** A share of the
   session exposes what the browser saw — on a logged-in tab, that can be the
@@ -156,7 +156,9 @@ references and the one-line caption). Post it only when both images are
 reachable by the reviewer (repo-hosted URLs or a share):
 
 ```bash
-gh pr comment <n> --body-file .artifacts/$TASK/before-after.md
+gh pr comment <n> --body-file .artifacts/$TASK/before-after.md          # as a comment
+# or into the PR description, appended to the existing body:
+gh pr view <n> --json body -q .body > /tmp/body.md && cat .artifacts/$TASK/before-after.md >> /tmp/body.md && gh pr edit <n> --body-file /tmp/body.md
 ```
 
 Clean up: the `trap` stops your cloud session by id. Local: `thinkrun release`
