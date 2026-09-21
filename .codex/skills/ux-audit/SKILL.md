@@ -1,6 +1,6 @@
 ---
 name: ux-audit
-description: "Walk through a product UI as a real user — take screenshots, find broken flows, and produce a structured report with every fix listed. Use when: audit the UI or UX, do a UX review, QA a feature, check if something looks right, verify a user flow or onboarding, walk through a journey, 'is X broken?', 'check how X works', 'verify the feature we shipped'. Do NOT use for: fixing a specific known bug, reading a component's code, deploying, writing tests, or answering questions about code structure."
+description: "Walk through a product UI as a real user — take screenshots, find broken flows, and produce a structured report with every fix listed. Use when: audit the UI or UX, do a UX review, QA a feature, check if something looks right, verify a user flow or onboarding, walk through a journey, 'is X broken?', 'check how X works'. Do NOT use for: proving that a specific change works with pass/fail evidence for a PR, fixing a specific known bug, reading a component's code, deploying, writing tests, or answering questions about code structure."
 category: ux
 sync: all
 ---

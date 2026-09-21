@@ -52,8 +52,9 @@ Other tools give your agent eyes. ThinkRun gives it **structured sight** — con
 
 ## Agent skills for Claude Code, Cursor, Codex & Gemini CLI
 
-Four portable [agent skills](https://agentskills.io) ship in this repo, mirrored for every major harness (`.claude/skills/`, `.cursor/skills/`, `.codex/skills/`, `.gemini/skills/`):
+Five portable [agent skills](https://agentskills.io) ship in this repo, mirrored for every major harness (`.claude/skills/`, `.cursor/skills/`, `.codex/skills/`, `.gemini/skills/`):
 
+- **prove-it** — the prove step of a software-factory workflow: named test targets in, a pass/fail table with a screenshot, console and network capture per target out, posted to the PR; any non-pass row sends the change back to build.
 - **web-browse** — browse the web programmatically: drive a real or cloud browser to navigate, interact, extract, and screenshot.
 - **ux-audit** — walk through a product UI as a real user, screenshot every step, and produce a structured UX report with a prioritized fix list.
 - **thinkbrowse-cli** — drive the browser from shell scripts via the `thinkrun` CLI.
@@ -65,7 +66,7 @@ Four portable [agent skills](https://agentskills.io) ship in this repo, mirrored
 { "mcpServers": { "thinkrun-skills": { "url": "https://mcp.skillsovermcp.com/mcp/dundas/thinkrun" } } }
 ```
 
-**Trigger accuracy is measured, not claimed.** Every skill ships a 20-query trigger-eval fixture, and [`evals/BENCHMARK.md`](evals/BENCHMARK.md) publishes the results: 79–80/80 routing accuracy on 12 of the 16 published model configurations (GPT-5.4/5.5/5.6 and Claude Sonnet/Opus/Fable families; the outliers are a documented strict-reading mode, not crashes), plus catalog-ablation runs showing the skills absorb each other's traffic when installed as a subset. Reproduce with `bun evals/run-eval.ts build`.
+**Trigger accuracy is measured, not claimed.** Every skill ships a 20-query trigger-eval fixture, and [`evals/BENCHMARK.md`](evals/BENCHMARK.md) publishes the results: with the five-skill catalog (v3, 2026-09-18), 100/100 on GPT-5.6-terra and Claude Fable 5 and 94/100 on Claude Sonnet 5 (its documented strict-MCP reading, not a crash); the earlier four-skill matrix scored 79–80/80 on 12 of 16 model configurations. Catalog-ablation runs show the browsing skills absorb each other's traffic when installed as a subset, and that `prove-it` fills a gap rather than duplicating a sibling. Reproduce with `bun evals/run-eval.ts build`.
 
 ## Manual binary install
 

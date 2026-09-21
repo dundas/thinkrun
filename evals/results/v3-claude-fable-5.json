@@ -1,0 +1,32 @@
+{
+ "config": "v3-claude-fable-5",
+ "overall": "100/100",
+ "pct": 100,
+ "perFixture": {
+  "prove-it": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "thinkbrowse-cli": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "thinkbrowse-mcp": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "ux-audit": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "web-browse": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  }
+ }
+}
