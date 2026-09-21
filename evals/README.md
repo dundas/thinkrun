@@ -10,6 +10,8 @@ Headline (2026-07-16): full catalog 79–80/80 on 6 of 7 configs after eval-driv
 
 v3 (2026-09-18): `prove-it` added — 100/100 on gpt-5.6-terra and claude-fable-5, 94/100 on claude-sonnet-5 (its documented strict-MCP reading). The `no-prove-it` ablation shows a gap, not a duplicate: every positive routes to `none` when the skill is absent. A description must never name a sibling that may not be installed — the first ablation run caught exactly that.
 
+v4 (2026-09-18): `before-after` added — 120/120 on terra and fable-5, 113/120 on sonnet-5.
+
 ## Mirror check (CI)
 
 `.claude/skills/` is canonical; `.cursor/`, `.codex/` and `.gemini/` must be byte-identical copies. `bun run check` (`scripts/check-skills.ts`) fails on any drift, on a `trigger-eval.json` that is not 20 entries / 10 positives / unique queries, or on a `SKILL.md` whose frontmatter `name` is not its directory or whose `description` is empty or over 1024 chars. `.github/workflows/skills-check.yml` runs it on every PR.

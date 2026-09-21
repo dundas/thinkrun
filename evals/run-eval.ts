@@ -41,6 +41,7 @@ const VARIANTS: Record<string, { exclude: string[]; absorb: Record<string, strin
   "no-web-browse": { exclude: ["web-browse"], absorb: { "web-browse": ["thinkbrowse-cli", "thinkbrowse-mcp"] } },
   "no-cli-mcp": { exclude: ["thinkbrowse-cli", "thinkbrowse-mcp"], absorb: { "thinkbrowse-cli": ["web-browse"], "thinkbrowse-mcp": ["web-browse"] } },
   "no-prove-it": { exclude: ["prove-it"], absorb: { "prove-it": [] } },
+  "no-before-after": { exclude: ["before-after"], absorb: { "before-after": ["prove-it", "web-browse"] } },
 };
 
 type Row = { id: number; fixture: string; query: string; should_trigger: boolean };

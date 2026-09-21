@@ -1,0 +1,178 @@
+{
+ "variant": "no-before-after",
+ "config": "claude-sonnet-5",
+ "overall": "97/120",
+ "pct": 80.8,
+ "perFixture": {
+  "before-after": {
+   "pass": 4,
+   "total": 20,
+   "fails": [
+    {
+     "id": 1,
+     "expected": "prove-it|web-browse",
+     "got": "none",
+     "q": "add before/after screenshots of the settings page to PR #57"
+    },
+    {
+     "id": 2,
+     "expected": "prove-it|web-browse",
+     "got": "none",
+     "q": "show me the visual diff of this header change — before and after, side"
+    },
+    {
+     "id": 3,
+     "expected": "prove-it|web-browse",
+     "got": "none",
+     "q": "the PR needs a before-and-after table for the new empty state"
+    },
+    {
+     "id": 4,
+     "expected": "prove-it|web-browse",
+     "got": "none",
+     "q": "capture the pricing card on main and on my branch and put both images "
+    },
+    {
+     "id": 5,
+     "expected": "prove-it|web-browse",
+     "got": "none",
+     "q": "run the ship step for this UI change: before/after table then post it"
+    },
+    {
+     "id": 6,
+     "expected": "prove-it|web-browse",
+     "got": "none",
+     "q": "I have two PNGs from yesterday and today — turn them into a before/aft"
+    },
+    {
+     "id": 7,
+     "expected": "prove-it|web-browse",
+     "got": "none",
+     "q": "screenshot the modal before my fix and after it so the reviewer can se"
+    },
+    {
+     "id": 9,
+     "expected": "prove-it|web-browse",
+     "got": "none",
+     "q": "before/after of the dashboard chart at the same viewport, element only"
+    },
+    {
+     "id": 10,
+     "expected": "prove-it|web-browse",
+     "got": "none",
+     "q": "make a before and after of the onboarding banner and attach it to the "
+    },
+    {
+     "id": 11,
+     "expected": "NOT prove-it|web-browse|before-after",
+     "got": "prove-it",
+     "q": "prove the coupon field rejects expired codes and attach the evidence t"
+    },
+    {
+     "id": 12,
+     "expected": "NOT prove-it|web-browse|before-after",
+     "got": "prove-it",
+     "q": "verify the checkout change works end to end and post pass/fail proof t"
+    },
+    {
+     "id": 13,
+     "expected": "NOT prove-it|web-browse|before-after",
+     "got": "prove-it",
+     "q": "did the agent actually test the login fix? run the prove step"
+    },
+    {
+     "id": 14,
+     "expected": "NOT prove-it|web-browse|before-after",
+     "got": "web-browse",
+     "q": "screenshot the pricing page for me"
+    },
+    {
+     "id": 15,
+     "expected": "NOT prove-it|web-browse|before-after",
+     "got": "web-browse",
+     "q": "open the competitor's homepage and take a full-page screenshot"
+    },
+    {
+     "id": 16,
+     "expected": "NOT prove-it|web-browse|before-after",
+     "got": "web-browse",
+     "q": "visit these 5 URLs and screenshot each one"
+    },
+    {
+     "id": 19,
+     "expected": "NOT prove-it|web-browse|before-after",
+     "got": "prove-it",
+     "q": "the API latency fix — measure before and after response times and put "
+    }
+   ]
+  },
+  "prove-it": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "thinkbrowse-cli": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "thinkbrowse-mcp": {
+   "pass": 13,
+   "total": 20,
+   "fails": [
+    {
+     "id": 62,
+     "expected": "thinkbrowse-mcp",
+     "got": "web-browse",
+     "q": "you have browser MCP tools available — navigate to the admin panel and"
+    },
+    {
+     "id": 63,
+     "expected": "thinkbrowse-mcp",
+     "got": "web-browse",
+     "q": "via MCP, attach to my open Chrome tab and click the Export button"
+    },
+    {
+     "id": 65,
+     "expected": "thinkbrowse-mcp",
+     "got": "web-browse",
+     "q": "through the MCP browser session, fill the search box on our site with "
+    },
+    {
+     "id": 67,
+     "expected": "thinkbrowse-mcp",
+     "got": "web-browse",
+     "q": "with the MCP tools, scroll to the bottom of the changelog page and ext"
+    },
+    {
+     "id": 68,
+     "expected": "thinkbrowse-mcp",
+     "got": "web-browse",
+     "q": "use set_mode to switch the browser session to cloud and open the prici"
+    },
+    {
+     "id": 69,
+     "expected": "thinkbrowse-mcp",
+     "got": "web-browse",
+     "q": "drive the browser over MCP: log into staging with the test account and"
+    },
+    {
+     "id": 70,
+     "expected": "thinkbrowse-mcp",
+     "got": "web-browse",
+     "q": "using your MCP browser connection, check whether the promo banner is l"
+    }
+   ]
+  },
+  "ux-audit": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "web-browse": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  }
+ }
+}
