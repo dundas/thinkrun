@@ -244,27 +244,27 @@ With the user's yes:
 
 ```bash
 CFG=$(thinkrun config show | sed -n 's/^Config file: //p'); CFG=${CFG:-$HOME/.config/thinkrun/config.json}
-API=$(jq -r .apiUrl "$CFG"); KEY=$(jq -r .apiKey "$CFG")   # read once, used once, never echoed
+API=$(jq -r .apiUrl "$CFG")
 # local mode: the Activity Feed session for the tab you pinned (NOT the id from `session debug`)
 [ "$T" = "--mode cloud" ] || SID=$(jq -r .sessionId ~/.thinkrun/local-session-$TAB_ID.json)
 # cloud mode: SID is the one you captured in Step 0; if lost, `thinkrun cloud status --json | jq -r .data.sessionId`
 # never start a new cloud session here — it would be empty
-# the key goes to curl via a config on stdin, never as an argument (argv is visible to `ps`)
-# The password never appears in command text (shell history, transcripts, `ps`).
-# Choose it yourself, write it with your FILE tool (not a shell echo) to a file only
-# you can read, and let the shell read the file. Fail closed: no password, no share.
-#   <file tool>: write ".artifacts/$TASK/.share-pw" containing the password, then
-PWFILE=".artifacts/$TASK/.share-pw"; chmod 600 "$PWFILE"
-PW=$(cat "$PWFILE") && rm -f "$PWFILE"; [ -n "$PW" ] || { echo "no password — not sharing"; TOKEN=""; }
-# body built by a JSON encoder (never string-interpolated) into a 0600 file; key and
-# body both reach curl through the stdin config, so neither is in argv
-if [ -n "$PW" ]; then
-  BODY=".artifacts/$TASK/.share-body.json"; umask 077
-  jq -n --arg sid "$SID" --arg pw "$PW" '{sourceType:"session", sourceId:$sid, password:$pw, includeConsoleLogs:false, includeNetworkRequests:false}' > "$BODY"
-  TOKEN=$(printf 'header = "x-api-key: %s"\nheader = "content-type: application/json"\ndata = "@%s"\n' "$KEY" "$BODY" \
-    | curl -sf -K - -X POST "$API/api/share" | jq -er '.token // empty') || { echo "share creation failed — report 'session: not shared', do not post a link"; TOKEN=""; }
-  rm -f "$BODY"; unset PW
+
+# Secrets never appear in any command's arguments (shell history, transcripts, `ps`):
+# the API key is read from the config FILE by jq, the password is a FILE you write
+# with your file tool, and both reach curl through 0600 files. Fail closed.
+umask 077; SEC=".artifacts/$TASK/.share"; mkdir -p "$SEC"
+#   <file tool>: write "$SEC/pw" containing the password you chose, then:
+[ -s "$SEC/pw" ] || { echo "no password — not sharing"; TOKEN=""; }
+if [ -s "$SEC/pw" ]; then
+  jq -n --rawfile pw "$SEC/pw" --arg sid "$SID" \
+    '{sourceType:"session", sourceId:$sid, password:($pw|rtrimstr("\n")), includeConsoleLogs:false, includeNetworkRequests:false}' > "$SEC/body.json"
+  jq -r --slurpfile cfg "$CFG" -n '"header = \"x-api-key: \($cfg[0].apiKey)\"", "header = \"content-type: application/json\""' > "$SEC/curl.conf"
+  printf 'data = "@%s"\n' "$SEC/body.json" >> "$SEC/curl.conf"
+  TOKEN=$(curl -sf -K "$SEC/curl.conf" -X POST "$API/api/share" | jq -er '.token // empty') \
+    || { echo "share creation failed — report 'session: not shared', do not post a link"; TOKEN=""; }
 fi
+rm -rf "$SEC"
 [ -n "$TOKEN" ] && echo "session: https://thinkrun.ai/s/$TOKEN (password-protected)"
 ```
 
