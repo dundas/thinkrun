@@ -244,19 +244,27 @@ With the user's yes:
 
 ```bash
 CFG=$(thinkrun config show | sed -n 's/^Config file: //p'); CFG=${CFG:-$HOME/.config/thinkrun/config.json}
-API=$(jq -r .apiUrl "$CFG"); KEY=$(jq -r .apiKey "$CFG")   # read once, used once, never echoed
+API=$(jq -r .apiUrl "$CFG")
 # local mode: the Activity Feed session for the tab you pinned (NOT the id from `session debug`)
 [ "$T" = "--mode cloud" ] || SID=$(jq -r .sessionId ~/.thinkrun/local-session-$TAB_ID.json)
 # cloud mode: SID is the one you captured in Step 0; if lost, `thinkrun cloud status --json | jq -r .data.sessionId`
 # never start a new cloud session here — it would be empty
-# the key goes to curl via a config on stdin, never as an argument (argv is visible to `ps`)
-# You choose the password yourself (a few random words) and keep it in your own
-# context — do not generate it in the shell, where it would land in terminal
-# output, CI transcripts and agent traces. Put it in $PW for the one request.
-PW='<the password you chose>' 
-# key AND body go to curl through the stdin config — neither appears in argv
-TOKEN=$(printf 'header = "x-api-key: %s"\nheader = "content-type: application/json"\ndata = "{\\"sourceType\\":\\"session\\",\\"sourceId\\":\\"%s\\",\\"password\\":\\"%s\\",\\"includeConsoleLogs\\":false,\\"includeNetworkRequests\\":false}"\n' "$KEY" "$SID" "$PW" \
-  | curl -sf -K - -X POST "$API/api/share" | jq -er '.token // empty') || { echo "share creation failed — report 'session: not shared', do not post a link"; TOKEN=""; }
+
+# Secrets never appear in any command's arguments (shell history, transcripts, `ps`):
+# the API key is read from the config FILE by jq, the password is a FILE you write
+# with your file tool, and both reach curl through 0600 files. Fail closed.
+umask 077; SEC=".artifacts/$TASK/.share"; mkdir -p "$SEC"
+#   <file tool>: write "$SEC/pw" containing the password you chose, then:
+[ -s "$SEC/pw" ] || { echo "no password — not sharing"; TOKEN=""; }
+if [ -s "$SEC/pw" ]; then
+  jq -n --rawfile pw "$SEC/pw" --arg sid "$SID" \
+    '{sourceType:"session", sourceId:$sid, password:($pw|rtrimstr("\n")), includeConsoleLogs:false, includeNetworkRequests:false}' > "$SEC/body.json"
+  jq -r --slurpfile cfg "$CFG" -n '"header = \"x-api-key: \($cfg[0].apiKey)\"", "header = \"content-type: application/json\""' > "$SEC/curl.conf"
+  printf 'data = "@%s"\n' "$SEC/body.json" >> "$SEC/curl.conf"
+  TOKEN=$(curl -sf -K "$SEC/curl.conf" -X POST "$API/api/share" | jq -er '.token // empty') \
+    || { echo "share creation failed — report 'session: not shared', do not post a link"; TOKEN=""; }
+fi
+rm -rf "$SEC"
 [ -n "$TOKEN" ] && echo "session: https://thinkrun.ai/s/$TOKEN (password-protected)"
 ```
 
@@ -342,10 +350,8 @@ Clean up: `thinkrun audit off $T` (local); the cloud trap stops `$SID` by id.
 - The localhost check confirms a listener answers on the port, not that it is
   the exact process for the revision under test; if that matters, expose a
   build id on the app and read it before capturing.
-- The share password is assigned in a shell command and can land in shell
-  history. There is no secret-input channel in the CLI today. Treat the share
-  as revocable (`DELETE /api/share/<token>`) rather than secret-for-life, and
-  prefer a key you can rotate.
+- A share is revocable (`DELETE /api/share/<token>` with the key), not
+  secret-for-life; revoke it when the PR merges.
 
 ---
 
