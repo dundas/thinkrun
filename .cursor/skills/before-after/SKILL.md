@@ -29,6 +29,10 @@ share captures: if `prove-it` already produced PNGs, reuse them.
 
 ## Step 0 — Doctor, mode, target
 
+**Already have both PNGs?** Skip to "Reusing existing PNGs" at the end — no
+browser, no `doctor`, no session. Everything in Steps 0–2 exists to *produce*
+the two images.
+
 ```bash
 thinkrun doctor
 ```
@@ -137,34 +141,41 @@ Where the images live:
   band, and exclude console/network. See `prove-it` for the request.
 - **Never a public paste host.** No 0x0.st, no imgur, no anonymous gists.
 
-If neither is possible, post the table with local paths and tell the user the
-PNGs are in `.artifacts/$TASK/` for them to drag into the PR.
+If neither is possible, **do not post the table** — local paths render as
+broken images and prove nothing. Give the user the table and the two paths in
+your reply and say they are in `.artifacts/$TASK/` to drag into the PR. If
+they want a placeholder on the PR now, post one line stating the before/after
+pair is captured and pending attachment.
 
 ---
 
 ## Step 4 — Post
 
 Save the Step 3 table as `.artifacts/$TASK/before-after.md` (the two image
-references and the one-line caption), then:
+references and the one-line caption). Post it only when both images are
+reachable by the reviewer (repo-hosted URLs or a share):
 
 ```bash
 gh pr comment <n> --body-file .artifacts/$TASK/before-after.md
 ```
 
-Clean up: the `trap` stops your cloud session by id. Local: `thinkrun release $T`.
+Clean up: the `trap` stops your cloud session by id. Local: `thinkrun release`
+(it releases the attached tab; it takes no `--tab`).
 
 ---
 
 ## Reusing existing PNGs
 
-Both sources can be files:
+Both sources can be files, and then ThinkRun is not involved at all:
 
 ```bash
+TASK=<short-slug>; mkdir -p .artifacts/$TASK
 cp <existing-before>.png .artifacts/$TASK/before.png
 cp <existing-after>.png  .artifacts/$TASK/after.png
 ```
 
-Then Step 3. State where each came from in the one-line caption.
+Then Step 3 (table) and Step 4 (post). Check the two images are the same
+size before pairing them; if not, say so in the caption. State where each came from in the one-line caption.
 
 ---
 
