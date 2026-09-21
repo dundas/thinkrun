@@ -252,12 +252,19 @@ API=$(jq -r .apiUrl "$CFG"); KEY=$(jq -r .apiKey "$CFG")   # read once, used onc
 # the key goes to curl via a config on stdin, never as an argument (argv is visible to `ps`)
 # The password never appears in command text (shell history, transcripts, `ps`).
 # Choose it yourself, write it with your FILE tool (not a shell echo) to a file only
-# you can read, and let the shell read the file:
+# you can read, and let the shell read the file. Fail closed: no password, no share.
 #   <file tool>: write ".artifacts/$TASK/.share-pw" containing the password, then
-PWFILE=".artifacts/$TASK/.share-pw"; chmod 600 "$PWFILE"; PW=$(cat "$PWFILE"); rm -f "$PWFILE"
-# key AND body go to curl through the stdin config — neither appears in argv
-TOKEN=$(printf 'header = "x-api-key: %s"\nheader = "content-type: application/json"\ndata = "{\\"sourceType\\":\\"session\\",\\"sourceId\\":\\"%s\\",\\"password\\":\\"%s\\",\\"includeConsoleLogs\\":false,\\"includeNetworkRequests\\":false}"\n' "$KEY" "$SID" "$PW" \
-  | curl -sf -K - -X POST "$API/api/share" | jq -er '.token // empty') || { echo "share creation failed — report 'session: not shared', do not post a link"; TOKEN=""; }
+PWFILE=".artifacts/$TASK/.share-pw"; chmod 600 "$PWFILE"
+PW=$(cat "$PWFILE") && rm -f "$PWFILE"; [ -n "$PW" ] || { echo "no password — not sharing"; TOKEN=""; }
+# body built by a JSON encoder (never string-interpolated) into a 0600 file; key and
+# body both reach curl through the stdin config, so neither is in argv
+if [ -n "$PW" ]; then
+  BODY=".artifacts/$TASK/.share-body.json"; umask 077
+  jq -n --arg sid "$SID" --arg pw "$PW" '{sourceType:"session", sourceId:$sid, password:$pw, includeConsoleLogs:false, includeNetworkRequests:false}' > "$BODY"
+  TOKEN=$(printf 'header = "x-api-key: %s"\nheader = "content-type: application/json"\ndata = "@%s"\n' "$KEY" "$BODY" \
+    | curl -sf -K - -X POST "$API/api/share" | jq -er '.token // empty') || { echo "share creation failed — report 'session: not shared', do not post a link"; TOKEN=""; }
+  rm -f "$BODY"; unset PW
+fi
 [ -n "$TOKEN" ] && echo "session: https://thinkrun.ai/s/$TOKEN (password-protected)"
 ```
 
