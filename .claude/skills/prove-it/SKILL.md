@@ -314,6 +314,7 @@ Before commenting, check what the reviewer will be able to see:
 
 ```bash
 gh pr comment <n> --body-file .artifacts/$TASK/report.md      # only when the evidence is reachable
+gh issue comment <n> --body-file .artifacts/$TASK/report.md   # when the destination is an issue
 ```
 
 `gh` cannot attach images from the CLI. The screenshots reach the reviewer
@@ -341,6 +342,10 @@ Clean up: `thinkrun audit off $T` (local); the cloud trap stops `$SID` by id.
 - The localhost check confirms a listener answers on the port, not that it is
   the exact process for the revision under test; if that matters, expose a
   build id on the app and read it before capturing.
+- The share password is assigned in a shell command and can land in shell
+  history. There is no secret-input channel in the CLI today. Treat the share
+  as revocable (`DELETE /api/share/<token>`) rather than secret-for-life, and
+  prefer a key you can rotate.
 
 ---
 
