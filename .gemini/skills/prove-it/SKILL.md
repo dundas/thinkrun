@@ -250,10 +250,11 @@ API=$(jq -r .apiUrl "$CFG"); KEY=$(jq -r .apiKey "$CFG")   # read once, used onc
 # cloud mode: SID is the one you captured in Step 0; if lost, `thinkrun cloud status --json | jq -r .data.sessionId`
 # never start a new cloud session here — it would be empty
 # the key goes to curl via a config on stdin, never as an argument (argv is visible to `ps`)
-# You choose the password yourself (a few random words) and keep it in your own
-# context — do not generate it in the shell, where it would land in terminal
-# output, CI transcripts and agent traces. Put it in $PW for the one request.
-PW='<the password you chose>' 
+# The password never appears in command text (shell history, transcripts, `ps`).
+# Choose it yourself, write it with your FILE tool (not a shell echo) to a file only
+# you can read, and let the shell read the file:
+#   <file tool>: write ".artifacts/$TASK/.share-pw" containing the password, then
+PWFILE=".artifacts/$TASK/.share-pw"; chmod 600 "$PWFILE"; PW=$(cat "$PWFILE"); rm -f "$PWFILE"
 # key AND body go to curl through the stdin config — neither appears in argv
 TOKEN=$(printf 'header = "x-api-key: %s"\nheader = "content-type: application/json"\ndata = "{\\"sourceType\\":\\"session\\",\\"sourceId\\":\\"%s\\",\\"password\\":\\"%s\\",\\"includeConsoleLogs\\":false,\\"includeNetworkRequests\\":false}"\n' "$KEY" "$SID" "$PW" \
   | curl -sf -K - -X POST "$API/api/share" | jq -er '.token // empty') || { echo "share creation failed — report 'session: not shared', do not post a link"; TOKEN=""; }
@@ -342,10 +343,8 @@ Clean up: `thinkrun audit off $T` (local); the cloud trap stops `$SID` by id.
 - The localhost check confirms a listener answers on the port, not that it is
   the exact process for the revision under test; if that matters, expose a
   build id on the app and read it before capturing.
-- The share password is assigned in a shell command and can land in shell
-  history. There is no secret-input channel in the CLI today. Treat the share
-  as revocable (`DELETE /api/share/<token>`) rather than secret-for-life, and
-  prefer a key you can rotate.
+- A share is revocable (`DELETE /api/share/<token>` with the key), not
+  secret-for-life; revoke it when the PR merges.
 
 ---
 
