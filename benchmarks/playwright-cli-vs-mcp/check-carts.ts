@@ -13,7 +13,8 @@ for (const f of files) {
   for (const r of shop) {
     const want = new Map<number, number>(r.expected.items.map((it: any) => [Number(String(it.product).match(/(\d+)$/)![1]) - 99, it.quantity]));
     const got = new Map<number, number>(r.cart.map(([id, q]: [number, number]) => [id, q]));
-    const same = want.size === got.size && [...want].every(([id, q]) => got.get(id) === q);
+    const duplicateIds = got.size !== r.cart.length; // a product listed twice is a mismatch, never merged
+    const same = !duplicateIds && want.size === got.size && [...want].every(([id, q]) => got.get(id) === q);
     checked++;
     if (!same) { bad++; mismatched++; console.log(`  MISMATCH ${f} ${r.arm}/${r.task}/${r.variant ?? ""} run ${r.run}: cart ${JSON.stringify(r.cart)} expected ${JSON.stringify([...want])}`); }
   }

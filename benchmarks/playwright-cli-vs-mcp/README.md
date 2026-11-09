@@ -56,6 +56,7 @@ Requires [Bun](https://bun.sh). From this folder:
 |---|---|---|
 | Every number in the video: 285 tests, 277 passed; docs-task and shop token gaps; 97K vs 2.9M in 51 calls; step by step 6–27×; Luna stopping early in 5 of 15; write-once 70 of 75 at ~2.5 s with zero tokens; agent-browser 45/45 | `bun verify-claims.ts` | [verify-claims-output.txt](verify-claims-output.txt) |
 | "MCP was as quick or quicker": 9 of 12 comparisons | `bun speed.ts` | [speed-output.txt](speed-output.txt) |
+| Every passed shop run left exactly the expected cart (188 checked, 0 mismatches) | `bun check-carts.ts` | [check-carts-output.txt](check-carts-output.txt) |
 | Blog, Claude MCP and the first CLI batch | `bun analyze.ts` | — |
 | Blog, Claude CLI re-run | `bun analyze.ts results-cli-open-bash.jsonl` | — |
 | Blog, GPT-6 Luna / GPT-6.1 Sol tokens | `bun analyze-codex.ts gpt-6-luna` (or `gpt-6.1-sol`) | — |
@@ -101,6 +102,11 @@ We ran everything on macOS (Apple Silicon) with Bun 1.4. Each run gets a fresh s
 ## Caveats
 
 - Five runs per setup show large gaps, not small ones.
+- The runners score a shop run as passed when the agent's reply matches the expected items and total and the shop
+  recorded the expected number of add-to-cart events. They don't compare the shop's recorded cart itself. We kept the
+  scoring as it was run and audited it afterwards instead: `check-carts.ts` compares every passed run's recorded cart
+  with the expected items (a product listed twice counts as a mismatch), and all 188 match. If you rerun the benchmark,
+  add that comparison to the runners' `success` check.
 - The Claude and Codex shop arms compared in the video (CLI vs MCP + shell) come from different rounds, so most of those
   pairs were not run side by side.
 - Our first Codex attempt had a `PATH` bug in the runner, and one agent ordered through `curl` instead of the browser;
