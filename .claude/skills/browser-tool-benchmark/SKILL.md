@@ -76,8 +76,8 @@ One run, to prove the setup before spending on a batch. It is a paid model run: 
 to the cost (Inputs).
 
 ```bash
-bun run.ts smoke                                              # Claude Code
-CODEX_CLI_FULL_ACCESS=1 bun run-codex.ts <model> smoke        # Codex (after the user's yes)
+bun run.ts smoke                                              # Claude Code: after a yes to the smoke cost
+CODEX_CLI_FULL_ACCESS=1 bun run-codex.ts <model> smoke        # Codex: after a yes to the smoke cost AND a separate yes to full access
 ```
 
 Read the last row: `tail -1 results.jsonl` (Codex: `results-codex-v2-<model>.jsonl`). It must show
