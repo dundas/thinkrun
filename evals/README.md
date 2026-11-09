@@ -12,6 +12,8 @@ v3 (2026-09-18): `prove-it` added — 100/100 on gpt-5.6-terra and claude-fable-
 
 v4 (2026-09-18): `before-after` added — 120/120 on terra and fable-5, 113/120 on sonnet-5.
 
+v5 (2026-11-09): `browser-tool-benchmark` added — 140/140 on gpt-6-luna, claude-sonnet-5-5 and claude-opus-5-5 (current models; the v1–v4 models are no longer current on our logins).
+
 ## Mirror check (CI)
 
 `.claude/skills/` is canonical; `.cursor/`, `.codex/` and `.gemini/` must be byte-identical copies. `bun run check` (`scripts/check-skills.ts`) fails on any drift, on a `trigger-eval.json` that is not 20 entries / 10 positives / unique queries, or on a `SKILL.md` whose frontmatter `name` is not its directory or whose `description` is empty or over 1024 chars. `.github/workflows/skills-check.yml` runs it on every PR.

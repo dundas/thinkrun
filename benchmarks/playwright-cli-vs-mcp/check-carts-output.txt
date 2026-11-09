@@ -1,0 +1,11 @@
+results-cli-open-bash.jsonl                          passed shop runs  13  cart mismatches 0
+results-codex-v2-gpt-6-luna.jsonl                    passed shop runs  30  cart mismatches 0
+results-codex-v2-gpt-6.1-sol.jsonl                   passed shop runs  30  cart mismatches 0
+results-followup-claude.jsonl                        passed shop runs  30  cart mismatches 0
+results-followup-codex-gpt-6-luna.jsonl              passed shop runs   7  cart mismatches 0
+results-followup-codex-gpt-6.1-sol.jsonl             passed shop runs  10  cart mismatches 0
+results-followup-codex-mcpshell-gpt-6-luna.jsonl     passed shop runs  18  cart mismatches 0
+results-followup-codex-mcpshell-gpt-6.1-sol.jsonl    passed shop runs  20  cart mismatches 0
+results.jsonl                                        passed shop runs  30  cart mismatches 0
+
+188 passed shop runs checked; 0 with a recorded cart different from the expected items.

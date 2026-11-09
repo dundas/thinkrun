@@ -1,0 +1,70 @@
+shop runs 180 pass 173 | demo runs 45 pass 45 | total 225 pass 218
+
+# demo medians (tok, $)
+claude cli 60220 59836 100254 0.0620 final 17311
+claude mcp-shell 59282 43190 191553 0.0370 final 16643
+claude mcp 43649 32285 94820 0.0277 final 11896
+gpt-6-luna cli 190245 70468 336012 0.0054 
+gpt-6-luna mcp-shell 88400 76451 218244 0.0038 
+gpt-6-luna mcp 119668 97295 228218 0.0042 
+gpt-6.1-sol cli 192228 170839 237722 0.0748 
+gpt-6.1-sol mcp-shell 163130 145727 166700 0.0613 
+gpt-6.1-sol mcp 173371 155984 195889 0.0664 
+
+# shop, mcp+shell vs cli (tok,$)
+claude simple 204849 123153 fewer 0.399 $ 0.0859 0.0997 ratio 1.160
+claude dense 207050 104251 fewer 0.496 $ 0.0914 0.0780 ratio 0.853
+claude long 249705 124329 fewer 0.502 $ 0.1176 0.0889 ratio 0.756
+gpt-6-luna simple 252304 185455 mcp/cli 1.36 $ 0.0069 0.0048
+gpt-6-luna dense 392399 206892 mcp/cli 1.90 $ 0.0095 0.0056
+gpt-6-luna long 125293 261915 mcp/cli 0.48 $ 0.0057 0.0071
+gpt-6.1-sol simple 125391 143587 mcp/cli 0.87 $ 0.0688 0.0767
+gpt-6.1-sol dense 158654 148751 mcp/cli 1.07 $ 0.0607 0.0630
+gpt-6.1-sol long 188441 283692 mcp/cli 0.66 $ 0.0774 0.1050
+
+# luna 8 item mcp+shell, per run
+96674 0.0040 calls 3 script 1 true
+2938469 0.0385 calls 51 script 0 true
+125293 0.0057 calls 4 script 2 true
+96764 0.0040 calls 3 script 1 true
+160629 0.0060 calls 5 script 2 true
+
+# step-by-step vs standard 8-item (passing step runs)
+claude mcp+shell step 1438015 std 249705 tok x 5.8 $ 0.2987 0.1176 cost x 2.5
+claude cli step 1363619 std 124329 tok x 11.0 $ 0.2881 0.0889 cost x 3.2
+gpt-6-luna mcp+shell step 3418239 std 125293 tok x 27.3 $ 0.0421 0.0057 cost x 7.4
+gpt-6-luna cli step 1776934 std 261915 tok x 6.8 $ 0.0271 0.0071 cost x 3.8
+gpt-6.1-sol mcp+shell step 2017517 std 188441 tok x 10.7 $ 0.3553 0.0774 cost x 4.6
+gpt-6.1-sol cli step 2238151 std 283692 tok x 7.9 $ 0.3417 0.1050 cost x 3.3
+
+luna step runs 15 stopped cli:3,mcp:3,mcp:2,mcp:3,mcp:3
+claude cached share stepwise 0.981
+
+# grand total: extras 60 pass 59 | total 285 pass 277
+
+# write once vs normal 8-item, medians (tok,$): writeonce | cli | mcp+shell
+claude pass 5 / 5 tok 56987 124329 249705 $ 0.0636 0.0889 0.1176 rerun s 2.4
+gpt-6-luna pass 4 / 5 tok 160810 261915 125293 $ 0.0057 0.0071 0.0057 rerun s 2.5
+gpt-6.1-sol pass 5 / 5 tok 149562 283692 188441 $ 0.0630 0.1050 0.0774 rerun s 2.5
+reruns correct 70 of 75
+
+# agent-browser medians vs cli vs mcp+shell (tok)
+claude pass 15 / 15 demo 95761 60220 59282
+  simple 142710 123153 204849
+  dense 136675 104251 207050
+gpt-6-luna pass 15 / 15 demo 323115 190245 88400
+  simple 151391 185455 252304
+  dense 195057 206892 392399
+gpt-6.1-sol pass 15 / 15 demo 195446 192228 163130
+  simple 151355 143587 125391
+  dense 215688 148751 158654
+
+# every failure
+cli long run 1 adds 8 rerunPass - cart [[4,1],[101,0],[8,0],[205,0],[2,0],[106,0],[3,0],[110,0]]
+cli long run 3 adds 8 rerunPass - cart [[4,1],[101,0],[8,0],[205,0],[2,0],[106,0],[3,0],[110,0]]
+stepwise stepwise run 2 adds 3 rerunPass - cart [[4,1],[1,2],[8,1]]
+stepwise stepwise run 4 adds 3 rerunPass - cart [[4,1],[1,2],[8,1]]
+stepwise stepwise run 5 adds 2 rerunPass - cart [[4,1],[1,2]]
+stepwise-mcpshell stepwise run 1 adds 3 rerunPass - cart [[4,1],[1,2],[8,1]]
+stepwise-mcpshell stepwise run 4 adds 3 rerunPass - cart [[4,1],[1,2],[8,1]]
+writeonce writeonce run 4 adds undefined rerunPass 0 cart ""

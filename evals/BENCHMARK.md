@@ -148,3 +148,17 @@ sonnet-5's `before-after` miss (id 8: "compare staging and production homepage s
 With the skill absent, terra treats a before/after table as part of `prove-it` (which does document `before-*` captures); sonnet mostly routes to `none`. Every negative lands on the sibling it was written to test. No over-capture. The graded score under the absorb map (113/120 terra, 97/120 sonnet) is an artifact of negatives that were deliberately written as prove-it / web-browse near-misses; the routing table is the result.
 
 Reproduce as for v3.
+
+# Matrix v5 — 7-skill catalog with `browser-tool-benchmark`, 2026-11-09
+
+`browser-tool-benchmark` (run the open Playwright CLI vs MCP benchmark on your own agent and model) joins the catalog. 140 queries. The v1–v4 models are no longer current on our logins, so v5 runs the current set.
+
+| Config | Overall | browser-tool-benchmark | before-after | prove-it | cli | mcp | ux-audit | web-browse |
+|---|---|---|---|---|---|---|---|---|
+| gpt-6-luna | **140/140** | 20 | 20 | 20 | 20 | 20 | 20 | 20 |
+| claude-sonnet-5-5 | **140/140** | 20 | 20 | 20 | 20 | 20 | 20 | 20 |
+| claude-opus-5-5 | **140/140** | 20 | 20 | 20 | 20 | 20 | 20 | 20 |
+
+The new skill's negatives are near-misses for its siblings (drive a browser, prove a fix, UX review, before/after) and for non-browser benchmarks; none were captured. No ablation run for this skill yet.
+
+Reproduce: `bun evals/run-eval.ts build` → `codex exec --model gpt-6-luna --skip-git-repo-check -o out.txt - < evals/prompt.txt` / `claude -p --model <id> --output-format text "$(cat evals/prompt.txt)"` → `bun evals/run-eval.ts grade v5-<config> out.txt`. Raw outputs: `evals/results/raw/v5-*.txt`.

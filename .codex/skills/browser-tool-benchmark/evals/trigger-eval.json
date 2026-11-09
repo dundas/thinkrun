@@ -1,0 +1,22 @@
+[
+  {"query": "is Playwright CLI actually cheaper than Playwright MCP for my coding agent? test it on my setup", "should_trigger": true},
+  {"query": "benchmark playwright-cli vs @playwright/mcp on claude opus and tell me which uses fewer tokens", "should_trigger": true},
+  {"query": "rerun the ThinkRun Playwright CLI vs MCP tests on my machine", "should_trigger": true},
+  {"query": "measure how many tokens Codex burns using Playwright MCP versus the CLI", "should_trigger": true},
+  {"query": "reproduce the 285-test CLI vs MCP benchmark from the ThinkRun video", "should_trigger": true},
+  {"query": "does giving the agent a shell alongside Playwright MCP change the token usage? run the comparison", "should_trigger": true},
+  {"query": "compare agent-browser with Playwright CLI on cost and pass rate for gpt-6-luna", "should_trigger": true},
+  {"query": "how much more does step-by-step prompting cost my agent when browsing? benchmark it", "should_trigger": true},
+  {"query": "run Playwright's locators docs demo task with both CLI and MCP and compare the token counts", "should_trigger": true},
+  {"query": "which browser tool should my Claude Code agent use to save on its usage limit? measure it", "should_trigger": true},
+  {"query": "open the pricing page and screenshot it", "should_trigger": false},
+  {"query": "prove the checkout fix works and post pass/fail evidence to PR #40", "should_trigger": false},
+  {"query": "do a UX review of our signup flow with a fix list", "should_trigger": false},
+  {"query": "write Playwright end-to-end tests for the login page", "should_trigger": false},
+  {"query": "set up Playwright MCP in my Claude Code config", "should_trigger": false},
+  {"query": "benchmark GPT-6 Luna against Claude Sonnet on coding tasks", "should_trigger": false},
+  {"query": "scrape the product names from this shop's listing page", "should_trigger": false},
+  {"query": "add before/after screenshots of the header change to the PR", "should_trigger": false},
+  {"query": "why is my Playwright test flaky in CI?", "should_trigger": false},
+  {"query": "load test our API and report p95 latency", "should_trigger": false}
+]
