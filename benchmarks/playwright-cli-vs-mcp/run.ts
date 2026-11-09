@@ -74,11 +74,13 @@ async function runOne(arm: "mcp" | "cli", task: string, run: number | string) {
 }
 
 const mode = process.argv[2];
+// Runs already recorded in this mode's results file (RESULTS is results-cli-open-bash.jsonl for cliopen), so an
+// interrupted batch resumes instead of appending duplicates. (cliopen's skip added after publication.)
+const done = existsSync(RESULTS) ? readFileSync(RESULTS, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l)).filter((r) => typeof r.run === "number").map((r) => `${r.arm}-${r.task}-${r.run}`) : [];
 if (mode === "smoke") await runOne("cli", "simple", "smoke");
 else if (mode === "cliopen") {
-  for (let run = 1; run <= 5; run++) for (const task of Object.keys(TASKS)) await runOne("cli", task, run);
+  for (let run = 1; run <= 5; run++) for (const task of Object.keys(TASKS)) if (!done.includes(`cli-${task}-${run}`)) await runOne("cli", task, run);
 } else if (mode === "batch") {
-  const done = existsSync(RESULTS) ? readFileSync(RESULTS, "utf8").split("\n").filter(Boolean).map((l) => JSON.parse(l)).filter((r) => typeof r.run === "number").map((r) => `${r.arm}-${r.task}-${r.run}`) : [];
   for (let run = 1; run <= 5; run++) for (const task of Object.keys(TASKS)) {
     const order: ("mcp" | "cli")[] = (run + Object.keys(TASKS).indexOf(task)) % 2 ? ["cli", "mcp"] : ["mcp", "cli"];
     for (const arm of order) if (!done.includes(`${arm}-${task}-${run}`)) await runOne(arm, task, run);
