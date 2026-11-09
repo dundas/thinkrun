@@ -42,7 +42,7 @@ function workspace() {
 }
 async function agent(prompt: string, cwd: string, env: any) {
   let flags: string[], cmd: string[];
-  if (CLAUDE) cmd = ["claude", "-p", prompt, "--model", "claude-sonnet-5-5", "--effort", "medium", "--output-format", "stream-json", "--verbose", "--no-session-persistence", "--setting-sources", "project", "--strict-mcp-config", "--tools", "Bash,Read,Grep,Skill,Write,Edit", "--allowedTools", "Bash,Read,Grep,Skill,Write,Edit"];
+  if (CLAUDE) cmd = ["claude", "-p", prompt, "--model", process.env.BENCH_MODEL ?? "claude-sonnet-5-5", "--effort", process.env.BENCH_EFFORT ?? "medium", "--output-format", "stream-json", "--verbose", "--no-session-persistence", "--setting-sources", "project", "--strict-mcp-config", "--tools", "Bash,Read,Grep,Skill,Write,Edit", "--allowedTools", "Bash,Read,Grep,Skill,Write,Edit"];
   else { mkdirSync(join(cwd, ".zdot")); writeFileSync(join(cwd, ".zdot/.zshenv"), `export PATH=${JSON.stringify(env.PATH)}\n`);
     flags = ["exec", "--json", "--ephemeral", "--ignore-user-config", "--ignore-rules", "--skip-git-repo-check", "-m", WHO, "-c", "model_reasoning_effort=medium", "-c", 'web_search="disabled"', "-c", disabledSkills, "-c", `projects.${JSON.stringify(cwd)}.trust_level="trusted"`, "-c", "allow_login_shell=false", "-c", 'shell_environment_policy.inherit="all"', "-c", `shell_environment_policy.set.PATH=${JSON.stringify(env.PATH)}`, "-c", `shell_environment_policy.set.ZDOTDIR=${JSON.stringify(join(cwd, ".zdot"))}`, "--dangerously-bypass-approvals-and-sandbox"];
     for (const f of ["browser_use", "browser_use_external", "computer_use", "apps", "plugins", "multi_agent", "image_generation", "shell_snapshot"]) flags.push("-c", `features.${f}=false`); cmd = ["codex", ...flags, prompt]; }

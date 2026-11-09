@@ -91,9 +91,13 @@ GPT-6.1 Sol $2.00 / $0.10 / $10.00 per 1M input / cached / output tokens. Claude
 1. Install Bun, Google Chrome, Claude Code and/or the Codex CLI, signed in.
 2. `cd cli && npm ci && cd ..`, plus `cd ab && npm ci && cd ..` for the agent-browser runs. The MCP server is fetched
    with `npx -y @playwright/mcp@0.0.84`.
-3. Run a smoke test first, e.g. `bun run.ts smoke`, then a batch. Results append to the matching `results*.jsonl`, and
-   each run's event log goes to `events/`.
-4. The Codex runs that start Chrome from the shell need `CODEX_CLI_FULL_ACCESS=1`
+3. **Move the published results aside first:** `mkdir -p published && mv results*.jsonl published/`. The runners
+   append to the matching `results*.jsonl` and skip any run already recorded there, so with the published files in
+   place a batch would do nothing. (`cd published && bun ../verify-claims.ts` still recomputes the published numbers.)
+4. Run a smoke test first, e.g. `bun run.ts smoke`, then a batch. Each run's event log goes to `events/`. The Claude
+   runners use the published model and effort unless you set `BENCH_MODEL` / `BENCH_EFFORT`, e.g.
+   `BENCH_MODEL=claude-opus-5-5 bun run.ts batch`; the Codex runners take the model as their first argument.
+5. The Codex runs that start Chrome from the shell need `CODEX_CLI_FULL_ACCESS=1`
    (`--dangerously-bypass-approvals-and-sandbox`), because Chrome can't launch inside Codex's macOS sandbox. Run them
    only on a machine you're comfortable giving the agent full access to.
 
@@ -106,8 +110,9 @@ We ran everything on macOS (Apple Silicon) with Bun 1.4. Each run gets a fresh s
   and the shop recorded the expected number of add-to-cart events; the shop's recorded cart itself wasn't compared.
   We audited that afterwards rather than rescoring: `check-carts.ts` compares every passed run's recorded cart with the
   expected items (a product listed twice counts as a mismatch), and all 188 match. The runners here now also require
-  that match (`cart-check.ts`), so any rerun uses the stricter rule. That is the only change to the runners since the
-  published runs.
+  that match (`cart-check.ts`), so any rerun uses the stricter rule.
+- Two changes to the runners since the published runs: that cart check, and the optional `BENCH_MODEL` /
+  `BENCH_EFFORT` settings for the Claude runners (defaults are the published `claude-sonnet-5-5` at `medium`).
 - The Claude and Codex shop arms compared in the video (CLI vs MCP + shell) come from different rounds, so most of those
   pairs were not run side by side.
 - Our first Codex attempt had a `PATH` bug in the runner, and one agent ordered through `curl` instead of the browser;

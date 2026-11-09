@@ -1,0 +1,42 @@
+{
+ "config": "v5-claude-opus-5-5",
+ "overall": "140/140",
+ "pct": 100,
+ "perFixture": {
+  "before-after": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "browser-tool-benchmark": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "prove-it": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "thinkbrowse-cli": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "thinkbrowse-mcp": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "ux-audit": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  },
+  "web-browse": {
+   "pass": 20,
+   "total": 20,
+   "fails": []
+  }
+ }
+}

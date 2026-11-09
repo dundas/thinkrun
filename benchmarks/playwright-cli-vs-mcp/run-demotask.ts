@@ -57,7 +57,7 @@ async function collect(proc: any) {
 
 async function runClaude(arm: string, run: number | string) {
   const { cwd, env } = workspace(arm);
-  const flags = ["--model", "claude-sonnet-5-5", "--effort", "medium", "--output-format", "stream-json", "--verbose", "--no-session-persistence", "--setting-sources", "project", "--strict-mcp-config"];
+  const flags = ["--model", process.env.BENCH_MODEL ?? "claude-sonnet-5-5", "--effort", process.env.BENCH_EFFORT ?? "medium", "--output-format", "stream-json", "--verbose", "--no-session-persistence", "--setting-sources", "project", "--strict-mcp-config"];
   if (arm === "cli") flags.push("--tools", "Bash,Read,Grep,Skill", "--allowedTools", "Bash,Read,Grep,Skill");
   else { const cfg = join(cwd, "mcp.json"); writeFileSync(cfg, JSON.stringify({ mcpServers: { playwright: { command: "npx", args: mcpArgs(cwd) } } })); const shell = arm === "mcp-shell"; flags.push("--mcp-config", cfg, "--tools", shell ? "Bash,Read,Grep" : "", "--allowedTools", shell ? "mcp__playwright,Bash,Read,Grep" : "mcp__playwright"); }
   const started = Date.now();

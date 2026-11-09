@@ -8,8 +8,8 @@ import { cartMatches } from "./cart-check"; // added after publication; see cart
 const HERE = dirname(new URL(import.meta.url).pathname);
 const CLI_BIN = join(HERE, "cli/node_modules/.bin");
 const CLI_SKILL = join(HERE, "cli/node_modules/playwright-core/lib/tools/skills/playwright-cli");
-const MODEL = "claude-sonnet-5-5";
-const EFFORT = "medium";
+const MODEL = process.env.BENCH_MODEL ?? "claude-sonnet-5-5"; // published runs: claude-sonnet-5-5
+const EFFORT = process.env.BENCH_EFFORT ?? "medium"; // published runs: medium
 const MCP_VERSION = "0.0.84";
 const OPEN = process.argv[2] === "cliopen";
 const RESULTS = join(HERE, OPEN ? "results-cli-open-bash.jsonl" : "results.jsonl");
