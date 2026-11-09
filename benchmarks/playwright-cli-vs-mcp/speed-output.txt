@@ -1,0 +1,16 @@
+model                task         CLI  MCP+shell   faster
+claude-sonnet-5-5    simple    23.1 s     23.5 s   CLI by 0.4 s
+claude-sonnet-5-5    dense     23.8 s     22.2 s   MCP
+claude-sonnet-5-5    long      40.1 s     34.3 s   MCP
+gpt-6-luna           simple    27.0 s     27.9 s   CLI by 0.9 s
+gpt-6-luna           dense     28.4 s     29.1 s   CLI by 0.7 s
+gpt-6-luna           long      46.5 s     26.9 s   MCP
+gpt-6.1-sol          simple    29.9 s     25.7 s   MCP
+gpt-6.1-sol          dense     45.7 s     25.2 s   MCP
+gpt-6.1-sol          long      55.6 s     35.5 s   MCP
+claude-sonnet-5-5    docs      18.7 s     14.9 s   MCP
+gpt-6-luna           docs      42.0 s     24.4 s   MCP
+gpt-6.1-sol          docs      52.4 s     45.3 s   MCP
+
+MCP as quick or quicker in 9 of 12 comparisons; CLI faster in 3.
+Note: the Claude and Codex shop arms come from different rounds (CLI v2 / open-bash vs the follow-up round), so most shop pairs were not run side by side.

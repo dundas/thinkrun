@@ -96,6 +96,10 @@ Run `npx @thinkrun/mcp` (or `npm i -g @thinkrun/cli`) and record any session —
 ### How do I give my AI coding agent context about what went wrong?
 Hand it a ThinkRun recording. The structured "what happened" — actions, first bad signal, expected vs actual, and the element state — is exactly the context an agent needs to land a fix on the first try.
 
+## Benchmarks
+
+- [Playwright CLI vs MCP](benchmarks/playwright-cli-vs-mcp/): 285 tests on Claude Sonnet 5.5, GPT-6 Luna and GPT-6.1 Sol, with the test shop, prompts, runners, results and the scripts that recompute every published number ([video](https://youtu.be/7MiJN2htFtE), [blog post](https://thinkrun.ai/blog/playwright-cli-vs-mcp))
+
 ## More
 
 - [thinkrun.ai](https://thinkrun.ai?utm_source=github&utm_medium=readme&utm_campaign=thinkrun-repo)
