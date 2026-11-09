@@ -111,8 +111,13 @@ We ran everything on macOS (Apple Silicon) with Bun 1.4. Each run gets a fresh s
   We audited that afterwards rather than rescoring: `check-carts.ts` compares every passed run's recorded cart with the
   expected items (a product listed twice counts as a mismatch), and all 188 match. The runners here now also require
   that match (`cart-check.ts`), so any rerun uses the stricter rule.
-- Two changes to the runners since the published runs: that cart check, and the optional `BENCH_MODEL` /
-  `BENCH_EFFORT` settings for the Claude runners (defaults are the published `claude-sonnet-5-5` at `medium`).
+- The Claude CLI runs with a normal shell (`run.ts cliopen`) didn't check that the agent stayed in the browser; the
+  Codex, follow-up and extras runners did (`nonBrowserRequests`, `usedBrowser`). We audited the 15 published runs'
+  agent logs for direct HTTP calls to the shop: one run (8-item, run 1) used `curl` once to read a product page, and it
+  is one of the two failed runs, so no passed run is affected. `run.ts` now also requires zero non-browser requests.
+- Three changes to the runners since the published runs: the cart check, the browser-only check in `run.ts`, and the
+  optional `BENCH_MODEL` / `BENCH_EFFORT` settings for the Claude runners (defaults are the published
+  `claude-sonnet-5-5` at `medium`).
 - The Claude and Codex shop arms compared in the video (CLI vs MCP + shell) come from different rounds, so most of those
   pairs were not run side by side.
 - Our first Codex attempt had a `PATH` bug in the runner, and one agent ordered through `curl` instead of the browser;
