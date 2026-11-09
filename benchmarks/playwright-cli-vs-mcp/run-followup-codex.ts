@@ -7,6 +7,7 @@ import { cpSync, mkdtempSync, mkdirSync, writeFileSync, appendFileSync, existsSy
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { disabledSkills } from "./codex-flags.ts";
+import { cartMatches } from "./cart-check"; // added after publication; see cart-check.ts
 
 const HERE = dirname(new URL(import.meta.url).pathname);
 const MODEL = process.argv[2];
@@ -84,7 +85,7 @@ async function runOne(arm: "mcp" | "cli", task: string, run: number | string) {
   try { answer = JSON.parse(String(last?.text ?? "").match(/\{[\s\S]*\}/)?.[0] ?? "null"); } catch {}
   const answerOk = !!answer && answer.total === expected.total && JSON.stringify(answer.items) === JSON.stringify(expected.items);
   const usedBrowser = state.nonBrowserRequests === 0 && (arm === "mcp" ? calls.some((i) => i.type === "mcp_tool_call") : calls.some((i) => /playwright-cli/.test(String(i.command))));
-  const success = answerOk && state.addEvents === expected.adds && usedBrowser;
+  const success = answerOk && state.addEvents === expected.adds && usedBrowser && cartMatches(state.cart, expected.items);
   const setupBroken = arm === "cli" && /command not found: playwright-cli/.test(stdout);
   const skillUsed = calls.some((i) => /SKILL\.md/.test(String(i.command)));
   const commands = calls.map((i: any) => i.type === "mcp_tool_call" ? String(i.tool) : scrub(String(i.command)));

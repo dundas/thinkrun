@@ -3,6 +3,7 @@
 import { cpSync, mkdtempSync, mkdirSync, writeFileSync, appendFileSync, existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
+import { cartMatches } from "./cart-check"; // added after publication; see cart-check.ts
 
 const HERE = dirname(new URL(import.meta.url).pathname);
 const CLI_BIN = join(HERE, "cli/node_modules/.bin");
@@ -62,7 +63,7 @@ async function runOne(arm: "mcp" | "cli", task: string, run: number | string) {
   let answer: any = null;
   try { answer = JSON.parse(String(result?.result ?? "").match(/\{[\s\S]*\}/)?.[0] ?? "null"); } catch {}
   const answerOk = !!answer && answer.total === expected.total && JSON.stringify(answer.items) === JSON.stringify(expected.items);
-  const success = answerOk && state.addEvents === expected.adds;
+  const success = answerOk && state.addEvents === expected.adds && cartMatches(state.cart, expected.items);
   const rec = { at: new Date().toISOString(), arm, task, run, exit, timedOut, success, answerOk, adds: state.addEvents, expectedAdds: expected.adds, cart: state.cart, expected, answer, wallMs, apiMs: result?.duration_api_ms, turns: turns.size, toolCalls: uses.length, tools: uses.map((c: any) => c.name === "Bash" ? `Bash:${String(c.input?.command).split(" ").slice(0, 2).join(" ")}` : c.name), skillUsed, firstContext: contexts[0] ?? 0, finalContext: contexts.at(-1) ?? 0, peakContext: Math.max(0, ...contexts), inputAll: result?.usage ? ctx(result.usage) : null, output: result?.usage?.output_tokens ?? null, costUsd: result?.total_cost_usd ?? null, costBasis: result?.modelUsage?.[MODEL]?.costBasis, denials: result?.permission_denials?.length ?? 0, subtype: result?.subtype, stderr: stderr.slice(0, 300) };
   appendFileSync(RESULTS, JSON.stringify(rec) + "\n");
   mkdirSync(join(HERE, "events"), { recursive: true });

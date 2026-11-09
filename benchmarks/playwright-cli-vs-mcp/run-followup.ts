@@ -3,6 +3,7 @@
 import { cpSync, mkdtempSync, mkdirSync, writeFileSync, appendFileSync, existsSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
+import { cartMatches } from "./cart-check"; // added after publication; see cart-check.ts
 
 const HERE = dirname(new URL(import.meta.url).pathname);
 const CLI_BIN = join(HERE, "cli/node_modules/.bin");
@@ -68,7 +69,7 @@ async function runOne(arm: "mcp" | "cli", task: string, run: number | string) {
   let answer: any = null;
   try { answer = JSON.parse(String(result?.result ?? "").match(/\{[\s\S]*\}/)?.[0] ?? "null"); } catch {}
   const answerOk = !!answer && answer.total === expected.total && JSON.stringify(answer.items) === JSON.stringify(expected.items);
-  const success = answerOk && state.addEvents === expected.adds && state.nonBrowserRequests === 0;
+  const success = answerOk && state.addEvents === expected.adds && state.nonBrowserRequests === 0 && cartMatches(state.cart, expected.items);
   const sum = (k: string) => [...turns.values()].reduce((n, u) => n + (u[k] ?? 0), 0);
   const commands = uses.map((u: any) => u.name === "Bash" ? scrub(String(u.input?.command)) : u.name);
   const scriptCalls = uses.filter((u: any) => /browser_run_code/.test(u.name) || (u.name === "Bash" && isScript(String(u.input?.command)))).length;

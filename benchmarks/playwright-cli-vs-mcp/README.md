@@ -102,11 +102,12 @@ We ran everything on macOS (Apple Silicon) with Bun 1.4. Each run gets a fresh s
 ## Caveats
 
 - Five runs per setup show large gaps, not small ones.
-- The runners score a shop run as passed when the agent's reply matches the expected items and total and the shop
-  recorded the expected number of add-to-cart events. They don't compare the shop's recorded cart itself. We kept the
-  scoring as it was run and audited it afterwards instead: `check-carts.ts` compares every passed run's recorded cart
-  with the expected items (a product listed twice counts as a mismatch), and all 188 match. If you rerun the benchmark,
-  add that comparison to the runners' `success` check.
+- When these results were recorded, a shop run passed when the agent's reply matched the expected items and total
+  and the shop recorded the expected number of add-to-cart events; the shop's recorded cart itself wasn't compared.
+  We audited that afterwards rather than rescoring: `check-carts.ts` compares every passed run's recorded cart with the
+  expected items (a product listed twice counts as a mismatch), and all 188 match. The runners here now also require
+  that match (`cart-check.ts`), so any rerun uses the stricter rule. That is the only change to the runners since the
+  published runs.
 - The Claude and Codex shop arms compared in the video (CLI vs MCP + shell) come from different rounds, so most of those
   pairs were not run side by side.
 - Our first Codex attempt had a `PATH` bug in the runner, and one agent ordered through `curl` instead of the browser;

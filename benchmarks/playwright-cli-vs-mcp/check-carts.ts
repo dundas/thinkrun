@@ -1,8 +1,9 @@
-// Audit of the shop scoring. The runners count a run as passed when the agent's reply matches the expected items and
-// total AND the shop recorded the expected number of add-to-cart events; they don't compare the recorded cart itself
-// (pointed out in code review). This checks every passed shop run's recorded cart (`cart`: [product id, quantity]
-// pairs from the shop's /__state) against the expected items. Product names end in 100 + (id - 1), see fixture.ts.
+// Audit of the published shop scoring. When these results were recorded, a run passed when the agent's reply matched
+// the expected items and total AND the shop recorded the expected number of add-to-cart events; the recorded cart
+// itself wasn't compared (pointed out in code review, then added to the runners via cart-check.ts). This checks every
+// passed run's recorded cart (`cart`: [product id, quantity] pairs from the shop's /__state) against the expected items.
 // Run from this folder: bun check-carts.ts
+import { cartMatches } from "./cart-check";
 const files = (await Array.fromAsync(new Bun.Glob("results*.jsonl").scan("."))).sort();
 let checked = 0, mismatched = 0;
 for (const f of files) {
@@ -11,12 +12,9 @@ for (const f of files) {
   if (!shop.length) continue;
   let bad = 0;
   for (const r of shop) {
-    const want = new Map<number, number>(r.expected.items.map((it: any) => [Number(String(it.product).match(/(\d+)$/)![1]) - 99, it.quantity]));
-    const got = new Map<number, number>(r.cart.map(([id, q]: [number, number]) => [id, q]));
-    const duplicateIds = got.size !== r.cart.length; // a product listed twice is a mismatch, never merged
-    const same = !duplicateIds && want.size === got.size && [...want].every(([id, q]) => got.get(id) === q);
+    const same = cartMatches(r.cart, r.expected.items);
     checked++;
-    if (!same) { bad++; mismatched++; console.log(`  MISMATCH ${f} ${r.arm}/${r.task}/${r.variant ?? ""} run ${r.run}: cart ${JSON.stringify(r.cart)} expected ${JSON.stringify([...want])}`); }
+    if (!same) { bad++; mismatched++; console.log(`  MISMATCH ${f} ${r.arm}/${r.task}/${r.variant ?? ""} run ${r.run}: cart ${JSON.stringify(r.cart)} expected ${JSON.stringify(r.expected.items)}`); }
   }
   console.log(`${f.padEnd(52)} passed shop runs ${String(shop.length).padStart(3)}  cart mismatches ${bad}`);
 }
