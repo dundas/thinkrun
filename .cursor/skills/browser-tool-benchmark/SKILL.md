@@ -30,7 +30,9 @@ reply matches it: check the result, not the reply.
 | C. How the agent works | Step-by-step prompting, write-once scripts, agent-browser | `bun run-followup.ts stepwise`, `bun run-extras.ts claude writeonce` / `ab` | same with `<model>` |
 | D. Playwright's own demo | The docs task from Playwright's video, on live playwright.dev | `bun run-demotask.ts claude batch` | `bun run-demotask.ts <model> batch` |
 
-- **Budget**: say the expected cost before starting and get a yes. Published reference, 15 runs per setup:
+- **Budget**: before any model run, the smoke test included, say the expected cost and get a yes. The smoke test is
+  one run, about $0.10 on Claude Code (`claude-sonnet-5-5`) and under $0.10 on Codex. Published reference for a batch,
+  15 runs per setup:
   - Claude Code with `claude-sonnet-5-5`: about $2.80 for `run.ts batch` (30 runs) and $1.35 for `cliopen` (15).
   - Codex with `gpt-6-luna`: about $0.20 for 30 runs.
   - Codex with `gpt-6.1-sol`: about $2.10 for 30 runs.
@@ -70,7 +72,8 @@ Without the last line a batch does nothing: the runners append to `results*.json
 
 ## Step 2 — Smoke test
 
-One run, to prove the setup before spending on a batch:
+One run, to prove the setup before spending on a batch. It is a paid model run: only start it after the user's yes
+to the cost (Inputs).
 
 ```bash
 bun run.ts smoke                                              # Claude Code
