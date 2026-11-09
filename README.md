@@ -99,7 +99,7 @@ Hand it a ThinkRun recording. The structured "what happened" — actions, first 
 
 ## Benchmarks
 
-- [Playwright CLI vs MCP](benchmarks/playwright-cli-vs-mcp/): 285 tests on Claude Sonnet 5.5, GPT-6 Luna and GPT-6.1 Sol, with the test shop, prompts, runners, results and the scripts that recompute every published number ([video](https://youtu.be/7MiJN2htFtE), [blog post](https://thinkrun.ai/blog/playwright-cli-vs-mcp))
+- [Playwright CLI vs MCP](benchmarks/playwright-cli-vs-mcp/): 285 tests on Claude Sonnet 5.5, GPT-6 Luna and GPT-6.1 Sol, with the test shop, prompts, runners, results and the scripts that recompute every published number ([video](https://youtu.be/7MiJN2htFtE), [blog post](https://thinkrun.ai/blog/playwright-cli-vs-mcp), [ThinkRun analysis of the video](https://thinkrun.ai/s/Yt9Qk5rHtnCJckXku53Nfq-5uKxONQxcA9ufdndohgA))
 
 ## More
 

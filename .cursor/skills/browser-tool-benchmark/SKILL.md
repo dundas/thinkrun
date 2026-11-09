@@ -15,6 +15,14 @@ The benchmark is open: <https://github.com/dundas/thinkrun/tree/main/benchmarks/
 fresh local test shop that records every add-to-cart, so a run passes only if the cart is right **and** the agent's
 reply matches it: check the result, not the reply.
 
+**Published results, readable by an agent:** ThinkRun's analysis of the video, with its summary, key moments,
+transcript and screenshots:
+- share page: <https://thinkrun.ai/s/Yt9Qk5rHtnCJckXku53Nfq-5uKxONQxcA9ufdndohgA>
+- Markdown: <https://thinkrun.ai/s/Yt9Qk5rHtnCJckXku53Nfq-5uKxONQxcA9ufdndohgA.md>
+
+Read the Markdown when the user asks what the published benchmark found. Use the README's numbers when comparing,
+because its moment timestamps are off (see `video-analysis.md` in the folder).
+
 ---
 
 ## Inputs (ask once, up front)

@@ -5,6 +5,11 @@ recomputed from the files in this folder, and the runners let you repeat the tes
 
 - **Video:** [Playwright CLI vs MCP (285 Tests): Which Should You Use?](https://youtu.be/7MiJN2htFtE)
 - **Blog post:** [Playwright CLI vs MCP](https://thinkrun.ai/blog/playwright-cli-vs-mcp)
+- **ThinkRun's analysis of the video:** [share page](https://thinkrun.ai/s/Yt9Qk5rHtnCJckXku53Nfq-5uKxONQxcA9ufdndohgA)
+  ([Markdown](https://thinkrun.ai/s/Yt9Qk5rHtnCJckXku53Nfq-5uKxONQxcA9ufdndohgA.md),
+  [JSON](https://thinkrun.ai/s/Yt9Qk5rHtnCJckXku53Nfq-5uKxONQxcA9ufdndohgA.json)). It has a summary, key moments,
+  transcript and screenshots. A checked snapshot is in [video-analysis.md](video-analysis.md), with our corrections at the
+  top.
 - **Tested:** November 5–7, 2026. Models and tools change quickly; check the dates before relying on these results.
 
 ## What we tested
@@ -84,6 +89,7 @@ GPT-6.1 Sol $2.00 / $0.10 / $10.00 per 1M input / cached / output tokens. Claude
 | `screenshots/docs-task/` | One passing docs-task run per model (the agents' own screenshots) |
 | `cli/`, `ab/` | `package.json` + lock files for `@playwright/cli` and `agent-browser` (run `npm ci` in each) |
 | `PROMPTS.md` | Every prompt, verbatim |
+| `video-analysis.md` | ThinkRun's analysis of the video (share-page Markdown export, 2026-11-09), with our corrections note |
 | `events/` | Where the runners write each run's full agent event log (not published; see below) |
 
 ## Run it yourself
