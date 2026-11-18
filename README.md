@@ -4,6 +4,18 @@ Stop screenshotting bugs and typing paragraphs to explain them. ThinkRun records
 
 Works with **Claude Code**, **Cursor**, **Cline**, **Windsurf**, and any MCP client.
 
+## Try ThinkRun in your own browser
+
+You can control a Chrome tab locally before creating an account.
+
+1. Install the [ThinkRun Chrome extension](https://chromewebstore.google.com/detail/thinkrun-screen-recorder/affbcanbhbnolapiokgjnkfjccdmefmd). With the CLI, run `thinkrun setup` to install the native host. With MCP, run `npx @thinkrun/mcp install-native-host`. Open Chrome and enable or reload the extension.
+2. Use `thinkrun doctor` or `npx @thinkrun/mcp doctor` to check the connection. In the CLI, run `thinkrun tabs`, then `thinkrun attach <tabId>`. In MCP, ask your agent to attach to your chosen local tab.
+3. Give the agent a small job, such as checking that a saved item is still there after reloading the page.
+4. To save evidence, run `thinkrun login` to connect a [free ThinkRun account](https://thinkrun.ai/signup). In MCP, ask the agent to save the local session. Enable audit mode before repeating the check to capture screenshots of subsequent actions.
+5. Open the saved session in your [Activity Feed](https://thinkrun.ai/activity). Review what happened, record feedback for your agent, or prepare a GitHub issue from the evidence you choose to share.
+
+For a hosted browser, configure a ThinkRun API key and run `thinkrun cloud start` or select cloud mode in MCP.
+
 ## Install
 
 ```bash
@@ -15,8 +27,6 @@ Or install the CLI globally:
 ```bash
 npm install -g @thinkrun/cli
 ```
-
-The CLI automatically installs the native host binary, which lets AI tools control Chrome.
 
 ## Add to your MCP config
 
